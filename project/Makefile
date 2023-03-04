@@ -40,3 +40,7 @@ build_account_service:
 	@echo "Building account-service binary..."
 	cd ../account-service && env GOOS=linux CGO_ENABLED=0 go build -o ${ACCOUNT_SERVICE_BINARY} ./cmd/api
 	@echo "Done!"
+
+## sqlc: generates sql code from template
+sqlc:
+	sqlc generate

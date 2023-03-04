@@ -40,5 +40,3 @@ services:
       replicas: 1
     depends_on:
       - account_db_postgres
-    environment:
-      DSN: "host=postgres port=5432 user=postgres password=postgres dbname=accounts sslmode=disable timezone=UTC connect_timeout=5"
