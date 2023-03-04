@@ -12,6 +12,7 @@ services:
       mode: replicated
       replicas: 1
 
+  # Database container for accounts
   account_db_postgres:
     image: "postgres:alpine"
     ports:
@@ -26,3 +27,18 @@ services:
       POSTGRES_DB: accounts
     volumes:
       - ./db-data/account-postgres/:/var/lib/postgresql/data
+
+  account-service:
+    build:
+      context: ./../account-service
+      dockerfile: ./../account-service/account-service.dockerfile
+    restart: always
+    ports:
+      - "8081:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - account_db_postgres
+    environment:
+      DSN: "host=postgres port=5432 user=postgres password=postgres dbname=accounts sslmode=disable timezone=UTC connect_timeout=5"
