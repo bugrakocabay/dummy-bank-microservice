@@ -24,8 +24,10 @@ func (app *Config) routes() http.Handler {
 
 	mux.Use(middleware.Heartbeat("/ping"))
 
-	mux.Post("/", app.Gateway)
 	mux.Post("/handle/accounts", app.HandleAccounts)
+	mux.Get("/handle/accounts/{id}", app.HandleAccounts)
+	mux.Put("/handle/accounts/update", app.HandleAccounts)
+	mux.Delete("/handle/accounts/delete/{id}", app.HandleAccounts)
 
 	return mux
 }
