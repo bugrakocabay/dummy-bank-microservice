@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"net/http"
+	"time"
+
 	db "github.com/bugrakocabay/dummy-bank-microservice/account-service/db/sqlc"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type createAccountRequest struct {
@@ -14,10 +16,38 @@ type createAccountRequest struct {
 	Password  string `json:"password" binding:"required"`
 }
 
+type accountResponse struct {
+	Firstname string    `json:"firstname"`
+	Lastname  string    `json:"lastname"`
+	Email     string    `json:"email"`
+	Balance   int32     `json:"balance"`
+	Type      string    `json:"type"`
+	AccountID string    `json:"account_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func newAccountResponse(account db.Account) accountResponse {
+	return accountResponse{
+		Firstname: account.Firstname,
+		Lastname:  account.Lastname,
+		Email:     account.Email,
+		Balance:   account.Balance,
+		Type:      account.Type,
+		AccountID: account.AccountID,
+		CreatedAt: account.CreatedAt,
+	}
+}
+
 func (server *Server) createAccount(ctx *gin.Context) {
 	var req createAccountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	hashedPassword, err := hashPassword(req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
@@ -26,7 +56,7 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		Firstname: req.Firstname,
 		Lastname:  req.Lastname,
 		Email:     req.Lastname,
-		Password:  req.Password, // TODO: Hash
+		Password:  hashedPassword,
 		Type:      "user",
 	}
 
@@ -36,7 +66,8 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, account)
+	resp := newAccountResponse(account)
+	ctx.JSON(http.StatusCreated, resp)
 }
 
 type getAccountRequest struct {
@@ -60,7 +91,8 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, account)
+	resp := newAccountResponse(account)
+	ctx.JSON(http.StatusCreated, resp)
 }
 
 type updateAccountRequest struct {
@@ -90,7 +122,8 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, account)
+	resp := newAccountResponse(account)
+	ctx.JSON(http.StatusCreated, resp)
 }
 
 type deleteAccountRequest struct {
