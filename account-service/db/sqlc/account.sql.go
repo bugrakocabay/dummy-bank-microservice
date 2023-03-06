@@ -111,6 +111,24 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 	return i, err
 }
 
+const getAccountBalance = `-- name: GetAccountBalance :one
+SELECT account_id, balance
+FROM accounts
+WHERE id = $1 LIMIT 1
+`
+
+type GetAccountBalanceRow struct {
+	AccountID string `json:"account_id"`
+	Balance   int32  `json:"balance"`
+}
+
+func (q *Queries) GetAccountBalance(ctx context.Context, id int64) (GetAccountBalanceRow, error) {
+	row := q.db.QueryRowContext(ctx, getAccountBalance, id)
+	var i GetAccountBalanceRow
+	err := row.Scan(&i.AccountID, &i.Balance)
+	return i, err
+}
+
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
 SELECT id, account_id, firstname, lastname, balance, email, password, type, created_at, updated_at
 FROM accounts

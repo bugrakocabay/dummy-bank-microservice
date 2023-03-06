@@ -33,3 +33,8 @@ WHERE id = sqlc.arg(id) RETURNING *;
 -- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1;
+
+-- name: GetAccountBalance :one
+SELECT account_id, balance
+FROM accounts
+WHERE id = $1 LIMIT 1;

@@ -61,3 +61,19 @@ services:
       replicas: 1
     depends_on:
       - mongo
+
+  # Database container for transactions
+  transaction_db_postgres:
+    image: "postgres:alpine"
+    ports:
+      - "5433:5432"
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transactions
+    volumes:
+      - ./db-data/transaction-postgres/:/var/lib/postgresql/data

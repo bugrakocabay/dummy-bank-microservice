@@ -24,6 +24,14 @@ account_db_migrate_up:
 account_db_migrate_down:
 	migrate -path ./../account-service/db/migration -database "postgresql://postgres:postgres@localhost:5432/accounts?sslmode=disable" -verbose down
 
+## transaction_db_migrate_up: creates a migration to transaction database
+transaction_db_migrate_up:
+	migrate -path ./../transaction-service/db/migration -database "postgresql://postgres:postgres@localhost:5433/transactions?sslmode=disable" -verbose up
+
+## transaction_db_migrate_down: deletes the migration for transaction database
+transaction_db_migrate_down:
+	migrate -path ./../transaction-service/db/migration -database "postgresql://postgres:postgres@localhost:5433/transactions?sslmode=disable" -verbose down
+
 ## down: stop docker compose
 down:
 	@echo "Stopping docker compose..."

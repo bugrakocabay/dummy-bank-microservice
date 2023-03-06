@@ -95,6 +95,26 @@ func (server *Server) getAccount(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, resp)
 }
 
+func (server *Server) getAccountBalance(ctx *gin.Context) {
+	var req getAccountRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	account, err := server.store.GetAccountBalance(ctx, req.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, account)
+}
+
 type updateAccountRequest struct {
 	ID      int64 `json:"id" binding:"required,min=1"`
 	Balance int32 `json:"balance" binding:"required"`
