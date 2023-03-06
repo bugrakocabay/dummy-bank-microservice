@@ -77,3 +77,16 @@ services:
       POSTGRES_DB: transactions
     volumes:
       - ./db-data/transaction-postgres/:/var/lib/postgresql/data
+
+  transaction_service:
+    build:
+      context: ./../transaction-service
+      dockerfile: ./../transaction-service/transaction-service.dockerfile
+    restart: always
+    ports:
+      - "8083:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - transaction_db_postgres

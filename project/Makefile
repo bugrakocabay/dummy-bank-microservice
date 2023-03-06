@@ -1,6 +1,7 @@
 GATEWAY_BINARY=gatewayApp
 ACCOUNT_SERVICE_BINARY=accountServiceApp
 LOGGER_SERVICE_BINARY=loggerServiceApp
+TRANSACTION_SERVICE_BINARY=transactionServiceApp
 
 ## up: starts all containers in the background without forcing build
 up:
@@ -9,7 +10,7 @@ up:
 	@echo "Docker images started!"
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_gateway build_account_service build_logger_service
+up_build: build_gateway build_account_service build_logger_service build_transaction_service
 	@echo "Stopping docker images (if running...)"
 	docker-compose down
 	@echo "Building (when required) and starting docker images..."
@@ -54,6 +55,12 @@ build_account_service:
 build_logger_service:
 	@echo "Building logger-service binary..."
 	cd ../logger-service && env GOOS=linux CGO_ENABLED=0 go build -o ${LOGGER_SERVICE_BINARY} ./cmd/api
+	@echo "Done!"
+
+## build_transaction-service: builds the transaction-service binary as a linux executable
+build_transaction_service:
+	@echo "Building transaction-service binary..."
+	cd ../transaction-service && env GOOS=linux CGO_ENABLED=0 go build -o ${TRANSACTION_SERVICE_BINARY} ./cmd/api
 	@echo "Done!"
 
 ## sqlc: generates sql code from template
