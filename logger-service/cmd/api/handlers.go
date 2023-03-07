@@ -8,7 +8,7 @@ import (
 
 type JSONPayload struct {
 	Name string `json:"name"`
-	Data string `json:"data"`
+	Data any    `json:"data"`
 }
 
 func (app *Config) WriteLog(w http.ResponseWriter, r *http.Request) {

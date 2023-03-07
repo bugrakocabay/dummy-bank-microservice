@@ -78,13 +78,11 @@ services:
     volumes:
       - ./db-data/transaction-postgres/:/var/lib/postgresql/data
 
-  transaction_service:
+  transaction-service:
     build:
       context: ./../transaction-service
       dockerfile: ./../transaction-service/transaction-service.dockerfile
     restart: always
-    ports:
-      - "8083:80"
     deploy:
       mode: replicated
       replicas: 1

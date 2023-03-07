@@ -11,7 +11,7 @@ import (
 type Querier interface {
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
 	GetTransaction(ctx context.Context, id int64) (Transaction, error)
-	ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]Transaction, error)
+	ListTransactions(ctx context.Context) ([]Transaction, error)
 }
 
 var _ Querier = (*Queries)(nil)

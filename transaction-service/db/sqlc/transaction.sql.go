@@ -70,17 +70,10 @@ func (q *Queries) GetTransaction(ctx context.Context, id int64) (Transaction, er
 const listTransactions = `-- name: ListTransactions :many
 SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
 FROM transactions
-ORDER BY id LIMIT $1
-OFFSET $2
 `
 
-type ListTransactionsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]Transaction, error) {
-	rows, err := q.db.QueryContext(ctx, listTransactions, arg.Limit, arg.Offset)
+func (q *Queries) ListTransactions(ctx context.Context) ([]Transaction, error) {
+	rows, err := q.db.QueryContext(ctx, listTransactions)
 	if err != nil {
 		return nil, err
 	}
