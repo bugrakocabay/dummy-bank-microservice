@@ -1,9 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/bugrakocabay/dummy-bank-microservice/logger-service/data"
 	"github.com/go-chi/chi/v5"
-	"net/http"
 )
 
 type JSONPayload struct {
