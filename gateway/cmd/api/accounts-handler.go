@@ -59,8 +59,11 @@ func (app *Config) deleteAccountRequest(w http.ResponseWriter, r *http.Request) 
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "deleteAccountRequest", errors.New("error calling account service"))
+	if response.StatusCode == http.StatusBadRequest {
+		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		return
+	} else if response.StatusCode != http.StatusOK {
+		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
 		return
 	}
 
@@ -101,8 +104,11 @@ func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "getAccountRequest", errors.New("error calling account service"))
+	if response.StatusCode == http.StatusBadRequest {
+		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		return
+	} else if response.StatusCode != http.StatusOK {
+		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
 		return
 	}
 
@@ -148,8 +154,11 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, payload UpdatePay
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "updateAccountRequest", errors.New("error calling account service"))
+	if response.StatusCode == http.StatusBadRequest {
+		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		return
+	} else if response.StatusCode != http.StatusOK {
+		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
 		return
 	}
 
@@ -194,8 +203,11 @@ func (app *Config) createAccountRequest(w http.ResponseWriter, payload CreatePay
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusCreated {
-		app.errorJSON(w, "createAccountRequest", errors.New("error calling account service"))
+	if response.StatusCode == http.StatusBadRequest {
+		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		return
+	} else if response.StatusCode != http.StatusCreated {
+		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
 		return
 	}
 

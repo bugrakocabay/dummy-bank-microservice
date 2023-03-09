@@ -94,24 +94,6 @@ func (store *SQLStore) TransferTx(w http.ResponseWriter, ctx context.Context, ar
 			return err
 		}
 
-		result.FromAccount, err = store.updateAccountRequest(w, UpdatePayload{
-			ID:      arg.FromAccountID,
-			Balance: -arg.TransactionAmount,
-		})
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
-		result.ToAccount, err = store.updateAccountRequest(w, UpdatePayload{
-			ID:      arg.ToAccountID,
-			Balance: arg.TransactionAmount,
-		})
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
 		return nil
 	})
 

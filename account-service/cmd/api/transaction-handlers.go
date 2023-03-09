@@ -15,7 +15,7 @@ type createTransactionRequest struct {
 	Description       sql.NullString `json:"description"`
 }
 
-func (server *Server) createTransaction(ctx *gin.Context) {
+func (server *Server) createTransfer(ctx *gin.Context) {
 	var req createTransactionRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -23,15 +23,14 @@ func (server *Server) createTransaction(ctx *gin.Context) {
 		return
 	}
 
-	payload := db.CreateTransactionParams{
+	payload := db.TransferTxParams{
 		TransactionID:     server.createUUID(),
 		FromAccountID:     req.FromAccountID,
 		ToAccountID:       req.ToAccountID,
 		TransactionAmount: req.TransactionAmount,
 		Description:       req.Description,
 	}
-
-	transaction, err := server.store.CreateTransaction(ctx, payload)
+	transaction, err := server.store.TransferTx(ctx, payload)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

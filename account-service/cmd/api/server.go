@@ -6,8 +6,9 @@ import (
 )
 
 type Server struct {
-	store  db.Store
-	router *gin.Engine
+	store    db.Store
+	router   *gin.Engine
+	transfer db.SQLStore
 }
 
 func NewServer(store db.Store) *Server {
@@ -20,7 +21,7 @@ func NewServer(store db.Store) *Server {
 	router.PUT("/accounts/update", server.updateAccount)
 	router.DELETE("/accounts/delete/:id", server.deleteAccount)
 
-	router.POST("/transactions/create", server.createTransaction)
+	router.POST("/transactions/create", server.createTransfer)
 	router.GET("/transactions/:id", server.getTransaction)
 	router.GET("/transactions", server.listTransactions)
 

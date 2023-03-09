@@ -60,7 +60,10 @@ func (app *Config) createTransactionRequest(w http.ResponseWriter, payload Creat
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusCreated {
+	if response.StatusCode == http.StatusBadRequest {
+		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		return
+	} else if response.StatusCode != http.StatusCreated {
 		app.errorJSON(w, "createTransactionRequest", errors.New("error calling transaction service"))
 		return
 	}
@@ -101,8 +104,11 @@ func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request)
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "getTransactionRequest", errors.New("error calling transaction service"))
+	if response.StatusCode == http.StatusBadRequest {
+		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		return
+	} else if response.StatusCode != http.StatusOK {
+		app.errorJSON(w, "createTransactionRequest", errors.New("error calling transaction service"))
 		return
 	}
 
@@ -141,8 +147,11 @@ func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Reques
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "listTransactionsRequest", errors.New("error calling transaction service"))
+	if response.StatusCode == http.StatusBadRequest {
+		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		return
+	} else if response.StatusCode != http.StatusOK {
+		app.errorJSON(w, "createTransactionRequest", errors.New("error calling transaction service"))
 		return
 	}
 
