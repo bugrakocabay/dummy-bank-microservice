@@ -86,7 +86,7 @@ func (server *Server) createUUID() string {
 	uuid[8] = (uuid[8] & 0xbf) | 0x80
 
 	// Convert the UUID to a string format
-	return fmt.Sprintf("%x-%x-%x-%x-%x\n", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
 }
 
 func hashPassword(password string) (string, error) {

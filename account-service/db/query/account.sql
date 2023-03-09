@@ -1,6 +1,6 @@
 -- name: CreateAccount :one
-INSERT INTO accounts (account_id, firstname, lastname, email, password, type)
-VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+INSERT INTO accounts (account_id, user_id, balance, currency)
+VALUES ($1, $2, $3, $4) RETURNING *;
 
 -- name: GetAccount :one
 SELECT *
@@ -29,7 +29,6 @@ UPDATE accounts
 set balance = balance + sqlc.arg(amount)
 WHERE id = sqlc.arg(id) RETURNING *;
 
-
 -- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1;
@@ -38,3 +37,16 @@ WHERE id = $1;
 SELECT account_id, balance
 FROM accounts
 WHERE id = $1 LIMIT 1;
+
+-- name: CreateTransaction :one
+INSERT INTO transactions (transaction_id, from_account_id, to_account_id, transaction_amount, description)
+VALUES ($1, $2, $3, $4, $5) RETURNING *;
+
+-- name: GetTransaction :one
+SELECT *
+FROM transactions
+WHERE id = $1 LIMIT 1;
+
+-- name: ListTransactions :many
+SELECT *
+FROM transactions;

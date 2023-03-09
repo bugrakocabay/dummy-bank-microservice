@@ -7,12 +7,13 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const addAccountBalance = `-- name: AddAccountBalance :one
 UPDATE accounts
 set balance = balance + $1
-WHERE id = $2 RETURNING id, account_id, firstname, lastname, balance, email, password, type, created_at, updated_at
+WHERE id = $2 RETURNING id, account_id, user_id, balance, currency, created_at, updated_at
 `
 
 type AddAccountBalanceParams struct {
@@ -26,12 +27,9 @@ func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalancePa
 	err := row.Scan(
 		&i.ID,
 		&i.AccountID,
-		&i.Firstname,
-		&i.Lastname,
+		&i.UserID,
 		&i.Balance,
-		&i.Email,
-		&i.Password,
-		&i.Type,
+		&i.Currency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -39,38 +37,66 @@ func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalancePa
 }
 
 const createAccount = `-- name: CreateAccount :one
-INSERT INTO accounts (account_id, firstname, lastname, email, password, type)
-VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, account_id, firstname, lastname, balance, email, password, type, created_at, updated_at
+INSERT INTO accounts (account_id, user_id, balance, currency)
+VALUES ($1, $2, $3, $4) RETURNING id, account_id, user_id, balance, currency, created_at, updated_at
 `
 
 type CreateAccountParams struct {
 	AccountID string `json:"account_id"`
-	Firstname string `json:"firstname"`
-	Lastname  string `json:"lastname"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Type      string `json:"type"`
+	UserID    string `json:"user_id"`
+	Balance   int32  `json:"balance"`
+	Currency  string `json:"currency"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
 	row := q.db.QueryRowContext(ctx, createAccount,
 		arg.AccountID,
-		arg.Firstname,
-		arg.Lastname,
-		arg.Email,
-		arg.Password,
-		arg.Type,
+		arg.UserID,
+		arg.Balance,
+		arg.Currency,
 	)
 	var i Account
 	err := row.Scan(
 		&i.ID,
 		&i.AccountID,
-		&i.Firstname,
-		&i.Lastname,
+		&i.UserID,
 		&i.Balance,
-		&i.Email,
-		&i.Password,
-		&i.Type,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createTransaction = `-- name: CreateTransaction :one
+INSERT INTO transactions (transaction_id, from_account_id, to_account_id, transaction_amount, description)
+VALUES ($1, $2, $3, $4, $5) RETURNING id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
+`
+
+type CreateTransactionParams struct {
+	TransactionID     string         `json:"transaction_id"`
+	FromAccountID     string         `json:"from_account_id"`
+	ToAccountID       string         `json:"to_account_id"`
+	TransactionAmount int32          `json:"transaction_amount"`
+	Description       sql.NullString `json:"description"`
+}
+
+func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error) {
+	row := q.db.QueryRowContext(ctx, createTransaction,
+		arg.TransactionID,
+		arg.FromAccountID,
+		arg.ToAccountID,
+		arg.TransactionAmount,
+		arg.Description,
+	)
+	var i Transaction
+	err := row.Scan(
+		&i.ID,
+		&i.TransactionID,
+		&i.FromAccountID,
+		&i.ToAccountID,
+		&i.TransactionAmount,
+		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -88,7 +114,7 @@ func (q *Queries) DeleteAccount(ctx context.Context, id int64) error {
 }
 
 const getAccount = `-- name: GetAccount :one
-SELECT id, account_id, firstname, lastname, balance, email, password, type, created_at, updated_at
+SELECT id, account_id, user_id, balance, currency, created_at, updated_at
 FROM accounts
 WHERE id = $1 LIMIT 1
 `
@@ -99,12 +125,9 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.AccountID,
-		&i.Firstname,
-		&i.Lastname,
+		&i.UserID,
 		&i.Balance,
-		&i.Email,
-		&i.Password,
-		&i.Type,
+		&i.Currency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -130,7 +153,7 @@ func (q *Queries) GetAccountBalance(ctx context.Context, id int64) (GetAccountBa
 }
 
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
-SELECT id, account_id, firstname, lastname, balance, email, password, type, created_at, updated_at
+SELECT id, account_id, user_id, balance, currency, created_at, updated_at
 FROM accounts
 WHERE id = $1 LIMIT 1
 FOR NO KEY UPDATE
@@ -142,12 +165,31 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, e
 	err := row.Scan(
 		&i.ID,
 		&i.AccountID,
-		&i.Firstname,
-		&i.Lastname,
+		&i.UserID,
 		&i.Balance,
-		&i.Email,
-		&i.Password,
-		&i.Type,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getTransaction = `-- name: GetTransaction :one
+SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
+FROM transactions
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetTransaction(ctx context.Context, id int64) (Transaction, error) {
+	row := q.db.QueryRowContext(ctx, getTransaction, id)
+	var i Transaction
+	err := row.Scan(
+		&i.ID,
+		&i.TransactionID,
+		&i.FromAccountID,
+		&i.ToAccountID,
+		&i.TransactionAmount,
+		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -155,7 +197,7 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, e
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, account_id, firstname, lastname, balance, email, password, type, created_at, updated_at
+SELECT id, account_id, user_id, balance, currency, created_at, updated_at
 FROM accounts
 ORDER BY id LIMIT $1
 OFFSET $2
@@ -178,12 +220,46 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 		if err := rows.Scan(
 			&i.ID,
 			&i.AccountID,
-			&i.Firstname,
-			&i.Lastname,
+			&i.UserID,
 			&i.Balance,
-			&i.Email,
-			&i.Password,
-			&i.Type,
+			&i.Currency,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTransactions = `-- name: ListTransactions :many
+SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
+FROM transactions
+`
+
+func (q *Queries) ListTransactions(ctx context.Context) ([]Transaction, error) {
+	rows, err := q.db.QueryContext(ctx, listTransactions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Transaction{}
+	for rows.Next() {
+		var i Transaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.TransactionID,
+			&i.FromAccountID,
+			&i.ToAccountID,
+			&i.TransactionAmount,
+			&i.Description,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -203,7 +279,7 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 const updateAccount = `-- name: UpdateAccount :one
 UPDATE accounts
 set balance = $2
-WHERE id = $1 RETURNING id, account_id, firstname, lastname, balance, email, password, type, created_at, updated_at
+WHERE id = $1 RETURNING id, account_id, user_id, balance, currency, created_at, updated_at
 `
 
 type UpdateAccountParams struct {
@@ -217,12 +293,9 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (A
 	err := row.Scan(
 		&i.ID,
 		&i.AccountID,
-		&i.Firstname,
-		&i.Lastname,
+		&i.UserID,
 		&i.Balance,
-		&i.Email,
-		&i.Password,
-		&i.Type,
+		&i.Currency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

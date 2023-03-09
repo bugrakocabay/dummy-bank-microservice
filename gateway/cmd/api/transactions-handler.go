@@ -46,7 +46,7 @@ type CreateTransactionPayload struct {
 func (app *Config) createTransactionRequest(w http.ResponseWriter, payload CreateTransactionPayload) {
 	jsonData, _ := json.Marshal(payload)
 
-	request, err := http.NewRequest(http.MethodPost, "http://transaction-service/transactions/create", bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest(http.MethodPost, "http://account-service/transactions/create", bytes.NewBuffer(jsonData))
 	if err != nil {
 		app.errorJSON(w, "createTransactionRequest", err)
 		return
@@ -87,7 +87,7 @@ func (app *Config) createTransactionRequest(w http.ResponseWriter, payload Creat
 func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://transaction-service/transactions/%s", id), strings.NewReader(""))
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions/%s", id), strings.NewReader(""))
 	if err != nil {
 		app.errorJSON(w, "getTransactionRequest", err)
 		return
@@ -126,7 +126,7 @@ func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Request) {
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://transaction-service/transactions"), strings.NewReader(""))
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions"), strings.NewReader(""))
 
 	if err != nil {
 		app.errorJSON(w, "listTransactionsRequest", err)

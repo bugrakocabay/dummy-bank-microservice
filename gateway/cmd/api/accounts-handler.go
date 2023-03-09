@@ -173,10 +173,7 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, payload UpdatePay
 }
 
 type CreatePayload struct {
-	Firstname string `json:"firstname" binding:"required"`
-	Lastname  string `json:"lastname" binding:"required"`
-	Email     string `json:"email" binding:"required"`
-	Password  string `json:"password" binding:"required"`
+	Currency string `json:"currency"`
 }
 
 // createAccountRequest sends an HTTP request to account-service for creating a new account

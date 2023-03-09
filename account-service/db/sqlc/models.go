@@ -5,18 +5,27 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 )
 
 type Account struct {
 	ID        int64     `json:"id"`
 	AccountID string    `json:"account_id"`
-	Firstname string    `json:"firstname"`
-	Lastname  string    `json:"lastname"`
+	UserID    string    `json:"user_id"`
 	Balance   int32     `json:"balance"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
-	Type      string    `json:"type"`
+	Currency  string    `json:"currency"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Transaction struct {
+	ID                int64          `json:"id"`
+	TransactionID     string         `json:"transaction_id"`
+	FromAccountID     string         `json:"from_account_id"`
+	ToAccountID       string         `json:"to_account_id"`
+	TransactionAmount int32          `json:"transaction_amount"`
+	Description       sql.NullString `json:"description"`
+	CreatedAt         time.Time      `json:"created_at"`
+	UpdatedAt         time.Time      `json:"updated_at"`
 }

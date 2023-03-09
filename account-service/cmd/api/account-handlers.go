@@ -10,30 +10,23 @@ import (
 )
 
 type createAccountRequest struct {
-	Firstname string `json:"firstname" binding:"required"`
-	Lastname  string `json:"lastname" binding:"required"`
-	Email     string `json:"email" binding:"required"`
-	Password  string `json:"password" binding:"required"`
+	Currency string `json:"currency"`
 }
 
 type accountResponse struct {
-	Firstname string    `json:"firstname"`
-	Lastname  string    `json:"lastname"`
-	Email     string    `json:"email"`
 	Balance   int32     `json:"balance"`
-	Type      string    `json:"type"`
+	Currency  string    `json:"currency"`
 	AccountID string    `json:"account_id"`
+	UserID    string    `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 func newAccountResponse(account db.Account) accountResponse {
 	return accountResponse{
-		Firstname: account.Firstname,
-		Lastname:  account.Lastname,
-		Email:     account.Email,
 		Balance:   account.Balance,
-		Type:      account.Type,
+		Currency:  account.Currency,
 		AccountID: account.AccountID,
+		UserID:    account.UserID,
 		CreatedAt: account.CreatedAt,
 	}
 }
@@ -45,19 +38,11 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := hashPassword(req.Password)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
 	payload := db.CreateAccountParams{
 		AccountID: server.createUUID(),
-		Firstname: req.Firstname,
-		Lastname:  req.Lastname,
-		Email:     req.Lastname,
-		Password:  hashedPassword,
-		Type:      "user",
+		UserID:    server.createUUID(),
+		Currency:  req.Currency,
+		Balance:   0,
 	}
 
 	account, err := server.store.CreateAccount(ctx, payload)
@@ -92,7 +77,7 @@ func (server *Server) getAccount(ctx *gin.Context) {
 	}
 
 	resp := newAccountResponse(account)
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 func (server *Server) getAccountBalance(ctx *gin.Context) {
@@ -112,7 +97,7 @@ func (server *Server) getAccountBalance(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, account)
+	ctx.JSON(http.StatusOK, account)
 }
 
 type updateAccountRequest struct {
@@ -143,7 +128,7 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 	}
 
 	resp := newAccountResponse(account)
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 type deleteAccountRequest struct {
