@@ -35,5 +35,9 @@ func (app *Config) routes() http.Handler {
 	mux.Get("/handle/transactions/{id}", app.HandleTransactions)
 	mux.Get("/handle/transactions", app.HandleTransactions)
 
+	// Users-services
+	mux.Post("/handle/users", app.HandleUsers)
+	mux.Get("/handle/users/{user_id}", app.HandleUsers)
+	
 	return mux
 }

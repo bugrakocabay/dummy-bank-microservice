@@ -1,4 +1,4 @@
-module github.com/bugrakocabay/dummy-bank-microservice/transaction-service
+module github.com/bugrakocabay/dummy-bank-microservice/user-service
 
 go 1.19
 

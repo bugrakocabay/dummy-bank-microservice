@@ -62,8 +62,8 @@ services:
     depends_on:
       - mongo
 
-  # Database container for transactions
-  transaction_db_postgres:
+  # Database container for users
+  user_db_postgres:
     image: "postgres:alpine"
     ports:
       - "5433:5432"
@@ -74,17 +74,17 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: transactions
+      POSTGRES_DB: users
     volumes:
-      - ./db-data/transaction-postgres/:/var/lib/postgresql/data
+      - ./db-data/user-postgres/:/var/lib/postgresql/data
 
-  transaction-service:
+  user-service:
     build:
-      context: ./../transaction-service
-      dockerfile: ./../transaction-service/transaction-service.dockerfile
+      context: ../user-service
+      dockerfile: ../user-service/user-service.dockerfile
     restart: always
     deploy:
       mode: replicated
       replicas: 1
     depends_on:
-      - transaction_db_postgres
+      - user_db_postgres

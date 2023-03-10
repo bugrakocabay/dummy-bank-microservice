@@ -22,7 +22,7 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errorJSON(w, "HandleAccounts", err)
+		app.errorJSON(w, err)
 		return
 	}
 
@@ -36,7 +36,7 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 	case "delete":
 		app.deleteAccountRequest(w, r)
 	default:
-		app.errorJSON(w, "HandleAccounts", errors.New("unknown action type"))
+		app.errorJSON(w, errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action)))
 		return
 	}
 }
@@ -47,23 +47,23 @@ func (app *Config) deleteAccountRequest(w http.ResponseWriter, r *http.Request) 
 
 	request, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://account-service/accounts/delete/%s", id), strings.NewReader(""))
 	if err != nil {
-		app.errorJSON(w, "deleteAccountRequest", err)
+		app.errorJSON(w, err, 500)
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, "deleteAccountRequest", err)
+		app.errorJSON(w, err, response.StatusCode)
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
+		app.errorJSON(w, errors.New("error calling account service"), response.StatusCode)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (app *Config) deleteAccountRequest(w http.ResponseWriter, r *http.Request) 
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, "deleteAccountRequest", errors.New("error reading response body"))
+		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
 		return
 	}
 
@@ -92,23 +92,23 @@ func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
 
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/accounts/%s", id), strings.NewReader(""))
 	if err != nil {
-		app.errorJSON(w, "getAccountRequest", err)
+		app.errorJSON(w, err, 500)
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, "getAccountRequest", err)
+		app.errorJSON(w, err, response.StatusCode)
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
+		app.errorJSON(w, errors.New("error calling account service"), response.StatusCode)
 		return
 	}
 
@@ -119,7 +119,7 @@ func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, "getAccountRequest", errors.New("error reading response body"))
+		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
 		return
 	}
 
@@ -142,23 +142,23 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, payload UpdatePay
 
 	request, err := http.NewRequest(http.MethodPut, "http://account-service/accounts/update", bytes.NewBuffer(jsonData))
 	if err != nil {
-		app.errorJSON(w, "updateAccountRequest", err)
+		app.errorJSON(w, err, 500)
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, "updateAccountRequest", err)
+		app.errorJSON(w, err, response.StatusCode)
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
+		app.errorJSON(w, errors.New("error calling account service"), response.StatusCode)
 		return
 	}
 
@@ -169,7 +169,7 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, payload UpdatePay
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, "updateAccountRequest", errors.New("error reading response body"))
+		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
 		return
 	}
 
@@ -191,23 +191,23 @@ func (app *Config) createAccountRequest(w http.ResponseWriter, payload CreatePay
 
 	request, err := http.NewRequest(http.MethodPost, "http://account-service/accounts/create", bytes.NewBuffer(jsonData))
 	if err != nil {
-		app.errorJSON(w, "createAccountRequest", err)
+		app.errorJSON(w, err, 500)
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, "createAccountRequest", err)
+		app.errorJSON(w, err, response.StatusCode)
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusCreated {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error calling account service"))
+		app.errorJSON(w, errors.New("error calling account service"), response.StatusCode)
 		return
 	}
 
@@ -218,7 +218,7 @@ func (app *Config) createAccountRequest(w http.ResponseWriter, payload CreatePay
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, "createAccountRequest", errors.New("error reading response body"))
+		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
 		return
 	}
 

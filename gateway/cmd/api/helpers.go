@@ -55,12 +55,7 @@ func (app *Config) writeJSON(w http.ResponseWriter, status int, data any, header
 	return nil
 }
 
-type errorLog struct {
-	Message    string `json:"message"`
-	StatusCode int    `json:"status_code"`
-}
-
-func (app *Config) errorJSON(w http.ResponseWriter, name string, err error, status ...int) error {
+func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) error {
 	log.Println(err)
 	statusCode := http.StatusBadRequest
 
@@ -72,21 +67,17 @@ func (app *Config) errorJSON(w http.ResponseWriter, name string, err error, stat
 	payload.Error = true
 	payload.Message = err.Error()
 
-	var logPayload errorLog
-	logPayload.Message = err.Error()
-	logPayload.StatusCode = statusCode
-
-	err = app.sendErrorLog(name, logPayload)
-	if err != nil {
-		return err
-	}
-
 	return app.writeJSON(w, statusCode, payload)
 }
 
 type JSONPayload struct {
 	Name string `json:"name"`
 	Data any    `json:"data"`
+}
+
+type errorLog struct {
+	Message    any `json:"message"`
+	StatusCode int `json:"status_code"`
 }
 
 func (app *Config) sendErrorLog(name string, payload errorLog) error {

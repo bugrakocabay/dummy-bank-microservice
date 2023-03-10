@@ -1,7 +1,7 @@
 package main
 
 import (
-	db "github.com/bugrakocabay/dummy-bank-microservice/transaction-service/db/sqlc"
+	db "github.com/bugrakocabay/dummy-bank-microservice/user-service/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,10 +14,9 @@ func NewServer(store db.Store) *Server {
 	server := &Server{store: store}
 	router := gin.Default()
 
-	router.POST("/transactions/create", server.createTransaction)
-	router.GET("/transactions/:id", server.getTransaction)
-	router.GET("/transactions", server.listTransactions)
-
+	router.POST("/users/create", server.createUser)
+	router.GET("/users/:user_id", server.getUser)
+	
 	server.router = router
 	return server
 }

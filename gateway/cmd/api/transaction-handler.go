@@ -22,7 +22,7 @@ func (app *Config) HandleTransactions(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errorJSON(w, "HandleTransactions", err)
+		app.errorJSON(w, err)
 		return
 	}
 
@@ -33,6 +33,9 @@ func (app *Config) HandleTransactions(w http.ResponseWriter, r *http.Request) {
 		app.getTransactionRequest(w, r)
 	case "list":
 		app.listTransactionsRequest(w, r)
+	default:
+		app.errorJSON(w, errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action)))
+		return
 	}
 }
 
@@ -48,23 +51,23 @@ func (app *Config) createTransactionRequest(w http.ResponseWriter, payload Creat
 
 	request, err := http.NewRequest(http.MethodPost, "http://account-service/transactions/create", bytes.NewBuffer(jsonData))
 	if err != nil {
-		app.errorJSON(w, "createTransactionRequest", err)
+		app.errorJSON(w, err, 500)
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, "createTransactionRequest", err)
+		app.errorJSON(w, err, response.StatusCode)
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusCreated {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error calling transaction service"))
+		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)
 		return
 	}
 
@@ -75,7 +78,7 @@ func (app *Config) createTransactionRequest(w http.ResponseWriter, payload Creat
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error reading response body"))
+		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
 		return
 	}
 
@@ -92,23 +95,23 @@ func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request)
 
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions/%s", id), strings.NewReader(""))
 	if err != nil {
-		app.errorJSON(w, "getTransactionRequest", err)
+		app.errorJSON(w, err, 500)
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, "getTransactionRequest", err)
+		app.errorJSON(w, err, response.StatusCode)
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error calling transaction service"))
+		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)
 		return
 	}
 
@@ -119,7 +122,7 @@ func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request)
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, "getTransactionRequest", errors.New("error reading response body"))
+		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
 		return
 	}
 
@@ -135,23 +138,23 @@ func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Reques
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions"), strings.NewReader(""))
 
 	if err != nil {
-		app.errorJSON(w, "listTransactionsRequest", err)
+		app.errorJSON(w, err, 500)
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, "listTransactionsRequest", err)
+		app.errorJSON(w, err, response.StatusCode)
 		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, "createTransactionRequest", errors.New("invalid request"))
+		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, "createTransactionRequest", errors.New("error calling transaction service"))
+		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)
 		return
 	}
 
@@ -162,7 +165,7 @@ func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Reques
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, "listTransactionsRequest", errors.New("error reading response body"))
+		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
 		return
 	}
 

@@ -1,7 +1,7 @@
 GATEWAY_BINARY=gatewayApp
 ACCOUNT_SERVICE_BINARY=accountServiceApp
 LOGGER_SERVICE_BINARY=loggerServiceApp
-TRANSACTION_SERVICE_BINARY=transactionServiceApp
+USER_SERVICE_BINARY=userServiceApp
 
 ## up: starts all containers in the background without forcing build
 up:
@@ -10,7 +10,7 @@ up:
 	@echo "Docker images started!"
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_gateway build_account_service build_logger_service build_transaction_service
+up_build: build_gateway build_account_service build_logger_service build_user_service
 	@echo "Stopping docker images (if running...)"
 	docker-compose down
 	@echo "Building (when required) and starting docker images..."
@@ -25,13 +25,13 @@ account_db_migrate_up:
 account_db_migrate_down:
 	migrate -path ./../account-service/db/migration -database "postgresql://postgres:postgres@localhost:5432/accounts?sslmode=disable" -verbose down
 
-## transaction_db_migrate_up: creates a migration to transaction database
-transaction_db_migrate_up:
-	migrate -path ./../transaction-service/db/migration -database "postgresql://postgres:postgres@localhost:5433/transactions?sslmode=disable" -verbose up
+## user_db_migrate_up: creates a migration to user database
+user_db_migrate_up:
+	migrate -path ./../user-service/db/migration -database "postgresql://postgres:postgres@localhost:5433/users?sslmode=disable" -verbose up
 
-## transaction_db_migrate_down: deletes the migration for transaction database
-transaction_db_migrate_down:
-	migrate -path ./../transaction-service/db/migration -database "postgresql://postgres:postgres@localhost:5433/transactions?sslmode=disable" -verbose down
+## user_db_migrate_down: deletes the migration for user database
+user_db_migrate_down:
+	migrate -path ./../user-service/db/migration -database "postgresql://postgres:postgres@localhost:5433/users?sslmode=disable" -verbose down
 
 ## down: stop docker compose
 down:
@@ -57,10 +57,10 @@ build_logger_service:
 	cd ../logger-service && env GOOS=linux CGO_ENABLED=0 go build -o ${LOGGER_SERVICE_BINARY} ./cmd/api
 	@echo "Done!"
 
-## build_transaction-service: builds the transaction-service binary as a linux executable
-build_transaction_service:
-	@echo "Building transaction-service binary..."
-	cd ../transaction-service && env GOOS=linux CGO_ENABLED=0 go build -o ${TRANSACTION_SERVICE_BINARY} ./cmd/api
+## build_user-service: builds the user-service binary as a linux executable
+build_user_service:
+	@echo "Building user-service binary..."
+	cd ../user-service && env GOOS=linux CGO_ENABLED=0 go build -o ${USER_SERVICE_BINARY} ./cmd/api
 	@echo "Done!"
 
 ## sqlc: generates sql code from template

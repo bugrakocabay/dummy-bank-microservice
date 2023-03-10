@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"log"
 
-	db "github.com/bugrakocabay/dummy-bank-microservice/transaction-service/db/sqlc"
+	db "github.com/bugrakocabay/dummy-bank-microservice/user-service/db/sqlc"
 	_ "github.com/lib/pq"
 )
 
 const webPort = "80"
 
 func main() {
-	log.Printf("Starting Transaction service on port: %s", webPort)
+	log.Printf("Starting User service on port: %s", webPort)
 
 	// TODO: Use env variables
-	conn, err := sql.Open("postgres", "postgresql://postgres:postgres@transaction_db_postgres:5432/transactions?sslmode=disable")
+	conn, err := sql.Open("postgres", "postgresql://postgres:postgres@users_db_postgres:5432/users?sslmode=disable")
 	if err != nil {
 		log.Fatal("Cannot connect to DB:", err)
 	}
