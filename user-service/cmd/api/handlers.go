@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 	"time"
 
@@ -111,7 +110,6 @@ func (server *Server) authenticateUser(ctx *gin.Context) {
 
 	err = CheckPassword(user.Password, req.Password)
 	if err != nil {
-		log.Printf("wrong password: %v", err) // TODO: delete
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}

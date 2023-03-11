@@ -9,10 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type createAccountRequest struct {
-	Currency string `json:"currency"`
-}
-
 type accountResponse struct {
 	Balance   int32     `json:"balance"`
 	Currency  string    `json:"currency"`
@@ -29,6 +25,10 @@ func newAccountResponse(account db.Account) accountResponse {
 		UserID:    account.UserID,
 		CreatedAt: account.CreatedAt,
 	}
+}
+
+type createAccountRequest struct {
+	Currency string `json:"currency"`
 }
 
 func (server *Server) createAccount(ctx *gin.Context) {
