@@ -26,7 +26,8 @@ func NewServer(store db.Store) (*Server, error) {
 
 	router.POST("/users/create", server.createUser)
 	router.GET("/users/:user_id", server.getUser)
-	router.POST("/users/authenticate", server.authenticateUser)
+	router.POST("/users/login", server.loginUser)
+	router.GET("/users/authenticate", server.authenticateUser)
 
 	server.router = router
 	return server, nil

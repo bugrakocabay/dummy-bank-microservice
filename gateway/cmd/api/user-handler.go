@@ -11,9 +11,9 @@ import (
 )
 
 type UserRequestPayload struct {
-	Action       string                  `json:"action"`
-	Create       CreateUserPayload       `json:"create,omitempty"`
-	Authenticate AuthenticateUserPayload `json:"authenticate,omitempty"`
+	Action string            `json:"action"`
+	Create CreateUserPayload `json:"create,omitempty"`
+	Login  LoginUserPayload  `json:"login,omitempty"`
 }
 
 func (app *Config) HandleUsers(w http.ResponseWriter, r *http.Request) {
@@ -32,8 +32,8 @@ func (app *Config) HandleUsers(w http.ResponseWriter, r *http.Request) {
 		app.createUserRequest(w, requestPayload.Create)
 	case "get":
 		app.getUserRequest(w, r)
-	case "authenticate":
-		app.authenticateUserRequest(w, requestPayload.Authenticate)
+	case "login":
+		app.loginUserRequest(w, requestPayload.Login)
 	default:
 		if err = app.errorJSON(w, errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action))); err != nil {
 			return
@@ -42,20 +42,20 @@ func (app *Config) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type AuthenticateUserPayload struct {
+type LoginUserPayload struct {
 	UserID   string `json:"user_id" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-func (app *Config) authenticateUserRequest(w http.ResponseWriter, payload AuthenticateUserPayload) {
+func (app *Config) loginUserRequest(w http.ResponseWriter, payload LoginUserPayload) {
 	jsonData, _ := json.Marshal(payload)
 
-	request, err := http.NewRequest(http.MethodPost, "http://user-service/users/authenticate", bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest(http.MethodPost, "http://user-service/users/login", bytes.NewBuffer(jsonData))
 	if err != nil {
 		if err = app.errorJSON(w, err, 500); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("loginUserRequest", errorLog{
 			StatusCode: 500,
 			Message:    err,
 		})
@@ -68,7 +68,7 @@ func (app *Config) authenticateUserRequest(w http.ResponseWriter, payload Authen
 		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("loginUserRequest", errorLog{
 			StatusCode: response.StatusCode,
 			Message:    err,
 		})
@@ -87,7 +87,7 @@ func (app *Config) authenticateUserRequest(w http.ResponseWriter, payload Authen
 		if err = app.errorJSON(w, errors.New("invalid request"), response.StatusCode); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("loginUserRequest", errorLog{
 			StatusCode: response.StatusCode,
 			Message:    jsonResponseBody,
 		})
@@ -96,7 +96,7 @@ func (app *Config) authenticateUserRequest(w http.ResponseWriter, payload Authen
 		if err = app.errorJSON(w, errors.New("error calling user service"), response.StatusCode); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("loginUserRequest", errorLog{
 			StatusCode: response.StatusCode,
 			Message:    jsonResponseBody,
 		})
@@ -107,7 +107,7 @@ func (app *Config) authenticateUserRequest(w http.ResponseWriter, payload Authen
 		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("loginUserRequest", errorLog{
 			StatusCode: response.StatusCode,
 			Message:    err,
 		})

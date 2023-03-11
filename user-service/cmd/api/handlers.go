@@ -2,7 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	db "github.com/bugrakocabay/dummy-bank-microservice/user-service/db/sqlc"
@@ -86,18 +90,18 @@ func (server *Server) getUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
-type authenticateUserRequest struct {
+type loginUserRequest struct {
 	UserID   string `json:"user_id" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-type authenticateUserResponse struct {
+type loginUserResponse struct {
 	AccessToken string       `json:"access_token"`
 	User        userResponse `json:"user"`
 }
 
-func (server *Server) authenticateUser(ctx *gin.Context) {
-	var req authenticateUserRequest
+func (server *Server) loginUser(ctx *gin.Context) {
+	var req loginUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
@@ -125,9 +129,56 @@ func (server *Server) authenticateUser(ctx *gin.Context) {
 		return
 	}
 
-	resp := authenticateUserResponse{
+	resp := loginUserResponse{
 		AccessToken: accessToken,
 		User:        newUserResponse(user),
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
+type authenticateUserResponse struct {
+	Status  string `json:"status"`
+	Payload any    `json:"payload"`
+}
+
+const (
+	authorizationHeaderKey = "authorization"
+	authorizationBearer    = "bearer"
+)
+
+func (server *Server) authenticateUser(ctx *gin.Context) {
+	authorizationHeader := ctx.GetHeader(authorizationHeaderKey)
+	log.Println(authorizationHeader)
+	if len(authorizationHeader) == 0 {
+		err := errors.New("authorization header is not provided")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	fields := strings.Fields(authorizationHeader)
+	if len(fields) < 2 {
+		err := errors.New("invalid authorization header format")
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	authorizationType := strings.ToLower(fields[0])
+	if authorizationType != authorizationBearer {
+		err := fmt.Errorf("unsupported authorization type %s", authorizationType)
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	accessToken := fields[1]
+	payload, err := server.tokenMaker.VerifyToken(accessToken)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	resp := authenticateUserResponse{
+		Status:  "success",
+		Payload: payload,
 	}
 	ctx.JSON(http.StatusOK, resp)
 }
