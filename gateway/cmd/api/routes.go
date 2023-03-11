@@ -38,6 +38,7 @@ func (app *Config) routes() http.Handler {
 	// Users-services
 	mux.Post("/handle/users", app.HandleUsers)
 	mux.Get("/handle/users/{user_id}", app.HandleUsers)
-	
+	mux.Post("/handle/users/authenticate", app.HandleUsers)
+
 	return mux
 }

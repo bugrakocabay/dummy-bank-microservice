@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"log"
 	"net/http"
 	"time"
 
@@ -37,7 +39,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := hashPassword(req.Password)
+	hashedPassword, err := HashPassword(req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -73,10 +75,47 @@ func (server *Server) getUser(ctx *gin.Context) {
 
 	user, err := server.store.GetUser(ctx, req.UserID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusBadRequest, errorResponse(err))
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	resp := newUserResponse(user)
-	ctx.JSON(http.StatusCreated, resp)
+	ctx.JSON(http.StatusOK, resp)
+}
+
+type authenticateUserRequest struct {
+	UserID   string `json:"user_id" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func (server *Server) authenticateUser(ctx *gin.Context) {
+	var req authenticateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	user, err := server.store.GetUser(ctx, req.UserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusBadRequest, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	err = CheckPassword(user.Password, req.Password)
+	if err != nil {
+		log.Printf("wrong password: %v", err) // TODO: delete
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	resp := newUserResponse(user)
+	ctx.JSON(http.StatusOK, resp)
 }
