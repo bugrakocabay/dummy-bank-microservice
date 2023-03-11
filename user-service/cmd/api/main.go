@@ -21,7 +21,10 @@ func main() {
 	}
 
 	store := db.NewStore(conn)
-	server := NewServer(store)
+	server, err := NewServer(store)
+	if err != nil {
+		log.Fatal("cannot create server", err)
+	}
 
 	address := fmt.Sprintf(":%s", webPort)
 	if err = server.Start(address); err != nil {

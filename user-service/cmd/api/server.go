@@ -1,17 +1,27 @@
 package main
 
 import (
+	"fmt"
+	"github.com/bugrakocabay/dummy-bank-microservice/user-service/cmd/token"
 	db "github.com/bugrakocabay/dummy-bank-microservice/user-service/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	store  db.Store
-	router *gin.Engine
+	store      db.Store
+	tokenMaker token.Maker
+	router     *gin.Engine
 }
 
-func NewServer(store db.Store) *Server {
-	server := &Server{store: store}
+func NewServer(store db.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker("12345678901234567890123456789012") // TODO: move to env variable
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
+	server := &Server{
+		store:      store,
+		tokenMaker: tokenMaker,
+	}
 	router := gin.Default()
 
 	router.POST("/users/create", server.createUser)
@@ -19,7 +29,7 @@ func NewServer(store db.Store) *Server {
 	router.POST("/users/authenticate", server.authenticateUser)
 
 	server.router = router
-	return server
+	return server, nil
 }
 
 func (server *Server) Start(address string) error {

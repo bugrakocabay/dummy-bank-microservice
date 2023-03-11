@@ -91,6 +91,11 @@ type authenticateUserRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type authenticateUserResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        userResponse `json:"user"`
+}
+
 func (server *Server) authenticateUser(ctx *gin.Context) {
 	var req authenticateUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -114,6 +119,15 @@ func (server *Server) authenticateUser(ctx *gin.Context) {
 		return
 	}
 
-	resp := newUserResponse(user)
+	accessToken, err := server.tokenMaker.CreateToken(user.UserID, time.Hour)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	resp := authenticateUserResponse{
+		AccessToken: accessToken,
+		User:        newUserResponse(user),
+	}
 	ctx.JSON(http.StatusOK, resp)
 }

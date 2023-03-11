@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -23,6 +24,7 @@ func (app *Config) routes() http.Handler {
 	}))
 
 	mux.Use(middleware.Heartbeat("/ping"))
+	mux.Use(authenticate)
 
 	// Accounts-services
 	mux.Post("/handle/accounts", app.HandleAccounts)
@@ -41,4 +43,14 @@ func (app *Config) routes() http.Handler {
 	mux.Post("/handle/users/authenticate", app.HandleUsers)
 
 	return mux
+}
+
+func authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Call the Authentication service to validate the access token
+		// If the token is valid, call the next handler
+		// If the token is not valid, return an error response
+		log.Println("helloww")
+		next.ServeHTTP(w, r)
+	})
 }
