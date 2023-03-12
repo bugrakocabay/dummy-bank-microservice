@@ -91,9 +91,9 @@ func (app *Config) createTransactionRequest(w http.ResponseWriter, payload Creat
 }
 
 func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := chi.URLParam(r, "transaction_id")
 
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions/%s", id), strings.NewReader(""))
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions/%s", id), nil)
 	if err != nil {
 		app.errorJSON(w, err, 500)
 		return
@@ -109,6 +109,9 @@ func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request)
 
 	if response.StatusCode == http.StatusBadRequest {
 		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
+		return
+	} else if response.StatusCode == http.StatusNotFound {
+		app.errorJSON(w, errors.New("not found"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusOK {
 		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)
@@ -152,6 +155,9 @@ func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Reques
 
 	if response.StatusCode == http.StatusBadRequest {
 		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
+		return
+	} else if response.StatusCode == http.StatusNotFound {
+		app.errorJSON(w, errors.New("not found"), response.StatusCode)
 		return
 	} else if response.StatusCode != http.StatusOK {
 		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)

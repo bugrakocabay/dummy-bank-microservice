@@ -241,6 +241,9 @@ func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
 			Message:    err,
 		})
 		return
+	} else if response.StatusCode == http.StatusNotFound {
+		app.errorJSON(w, errors.New("not found"), response.StatusCode)
+		return
 	} else if response.StatusCode != http.StatusOK {
 		if err = app.errorJSON(w, errors.New("error calling account service"), response.StatusCode); err != nil {
 			return

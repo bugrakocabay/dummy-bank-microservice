@@ -6,10 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 type jsonResponse struct {
@@ -87,41 +85,4 @@ func (server *Server) createUUID() string {
 
 	// Convert the UUID to a string format
 	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
-}
-
-type userResponse struct {
-	Firstname string
-	Lastname  string
-	UserID    string
-	CreatedAt time.Time
-}
-
-// getUserRequest sends a request to user service and returns the userID
-func (server *Server) getUserRequest(userID string) (string, error) {
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://user-service/users/%s", userID), nil)
-	if err != nil {
-		return "", err
-	}
-
-	client := http.DefaultClient
-	response, err := client.Do(request)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode == http.StatusBadRequest {
-		return "", err
-	} else if response.StatusCode != http.StatusOK {
-		return "", err
-	}
-
-	body, err := ioutil.ReadAll(response.Body)
-
-	var userResp userResponse
-	if err = json.Unmarshal(body, &userResp); err != nil {
-		return "", err
-	}
-
-	return userResp.UserID, nil
 }

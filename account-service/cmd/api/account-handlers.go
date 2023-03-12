@@ -57,7 +57,7 @@ func (server *Server) createAccount(ctx *gin.Context) {
 }
 
 type getAccountRequest struct {
-	ID int64 `uri:"id" binding:"required,min=1"`
+	AccountID string `uri:"account_id" binding:"required,min=1"`
 }
 
 func (server *Server) getAccount(ctx *gin.Context) {
@@ -67,7 +67,7 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
-	account, err := server.store.GetAccount(ctx, req.ID)
+	account, err := server.store.GetAccount(ctx, req.AccountID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -88,7 +88,7 @@ func (server *Server) getAccountBalance(ctx *gin.Context) {
 		return
 	}
 
-	account, err := server.store.GetAccountBalance(ctx, req.ID)
+	account, err := server.store.GetAccountBalance(ctx, req.AccountID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -133,7 +133,7 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 }
 
 type deleteAccountRequest struct {
-	ID int64 `uri:"id" binding:"required,min=1"`
+	AccountID string `uri:"account_id" binding:"required,min=1"`
 }
 
 func (server *Server) deleteAccount(ctx *gin.Context) {
@@ -144,7 +144,7 @@ func (server *Server) deleteAccount(ctx *gin.Context) {
 	}
 
 	var err error
-	_, err = server.store.GetAccount(ctx, req.ID)
+	_, err = server.store.GetAccount(ctx, req.AccountID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -154,7 +154,7 @@ func (server *Server) deleteAccount(ctx *gin.Context) {
 		return
 	}
 
-	err = server.store.DeleteAccount(ctx, req.ID)
+	err = server.store.DeleteAccount(ctx, req.AccountID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 
 	db "github.com/bugrakocabay/dummy-bank-microservice/account-service/db/sqlc"
@@ -23,6 +24,30 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 
+	account1, err := server.store.GetAccount(ctx, req.FromAccountID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	if account1.Balance < req.TransactionAmount {
+		ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("sender doesn't have enough money")))
+		return
+	}
+
+	_, err = server.store.GetAccount(ctx, req.ToAccountID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
 	payload := db.TransferTxParams{
 		TransactionID:     server.createUUID(),
 		FromAccountID:     req.FromAccountID,
@@ -40,7 +65,7 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 }
 
 type getTransactionRequest struct {
-	ID int64 `uri:"id" binding:"required,min=1"`
+	TransactionID string `uri:"transaction_id" binding:"required,min=1"`
 }
 
 func (server *Server) getTransaction(ctx *gin.Context) {
@@ -51,8 +76,12 @@ func (server *Server) getTransaction(ctx *gin.Context) {
 		return
 	}
 
-	transaction, err := server.store.GetTransaction(ctx, req.ID)
+	transaction, err := server.store.GetTransaction(ctx, req.TransactionID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

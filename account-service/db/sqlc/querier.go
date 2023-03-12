@@ -12,11 +12,11 @@ type Querier interface {
 	AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (Account, error)
 	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
-	DeleteAccount(ctx context.Context, id int64) error
-	GetAccount(ctx context.Context, id int64) (Account, error)
-	GetAccountBalance(ctx context.Context, id int64) (GetAccountBalanceRow, error)
-	GetAccountForUpdate(ctx context.Context, id int64) (Account, error)
-	GetTransaction(ctx context.Context, id int64) (Transaction, error)
+	DeleteAccount(ctx context.Context, accountID string) error
+	GetAccount(ctx context.Context, accountID string) (Account, error)
+	GetAccountBalance(ctx context.Context, accountID string) (GetAccountBalanceRow, error)
+	GetAccountForUpdate(ctx context.Context, accountID string) (Account, error)
+	GetTransaction(ctx context.Context, transactionID string) (Transaction, error)
 	ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error)
 	ListTransactions(ctx context.Context) ([]Transaction, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)

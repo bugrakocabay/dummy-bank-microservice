@@ -32,13 +32,13 @@ func (app *Config) handleRouter() http.Handler {
 
 	// Accounts-services
 	mux.Post("/accounts", app.HandleAccounts)
-	mux.Get("/accounts/{id}", app.HandleAccounts)
+	mux.Get("/accounts/{account_id}", app.HandleAccounts)
 	mux.Put("/accounts/update", app.HandleAccounts)
-	mux.Delete("/accounts/delete/{id}", app.HandleAccounts)
+	mux.Delete("/accounts/delete/{account_id}", app.HandleAccounts)
 
 	// Transactions-services
 	mux.Post("/transactions", app.HandleTransactions)
-	mux.Get("/transactions/{id}", app.HandleTransactions)
+	mux.Get("/transactions/{transaction_id}", app.HandleTransactions)
 	mux.Get("/transactions", app.HandleTransactions)
 
 	// Users-services

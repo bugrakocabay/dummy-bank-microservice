@@ -5,12 +5,12 @@ VALUES ($1, $2, $3, $4) RETURNING *;
 -- name: GetAccount :one
 SELECT *
 FROM accounts
-WHERE id = $1 LIMIT 1;
+WHERE account_id = $1 LIMIT 1;
 
 -- name: GetAccountForUpdate :one
 SELECT *
 FROM accounts
-WHERE id = $1 LIMIT 1
+WHERE account_id = $1 LIMIT 1
 FOR NO KEY UPDATE;
 
 -- name: ListAccounts :many
@@ -31,12 +31,12 @@ WHERE account_id = sqlc.arg(account_id) RETURNING *;
 
 -- name: DeleteAccount :exec
 DELETE FROM accounts
-WHERE id = $1;
+WHERE account_id = $1;
 
 -- name: GetAccountBalance :one
 SELECT account_id, balance
 FROM accounts
-WHERE id = $1 LIMIT 1;
+WHERE account_id = $1 LIMIT 1;
 
 -- name: CreateTransaction :one
 INSERT INTO transactions (transaction_id, from_account_id, to_account_id, transaction_amount, description)
@@ -45,7 +45,7 @@ VALUES ($1, $2, $3, $4, $5) RETURNING *;
 -- name: GetTransaction :one
 SELECT *
 FROM transactions
-WHERE id = $1 LIMIT 1;
+WHERE transaction_id = $1 LIMIT 1;
 
 -- name: ListTransactions :many
 SELECT *

@@ -105,22 +105,22 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 
 const deleteAccount = `-- name: DeleteAccount :exec
 DELETE FROM accounts
-WHERE id = $1
+WHERE account_id = $1
 `
 
-func (q *Queries) DeleteAccount(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAccount, id)
+func (q *Queries) DeleteAccount(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, deleteAccount, accountID)
 	return err
 }
 
 const getAccount = `-- name: GetAccount :one
 SELECT id, account_id, user_id, balance, currency, created_at, updated_at
 FROM accounts
-WHERE id = $1 LIMIT 1
+WHERE account_id = $1 LIMIT 1
 `
 
-func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
-	row := q.db.QueryRowContext(ctx, getAccount, id)
+func (q *Queries) GetAccount(ctx context.Context, accountID string) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccount, accountID)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -137,7 +137,7 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 const getAccountBalance = `-- name: GetAccountBalance :one
 SELECT account_id, balance
 FROM accounts
-WHERE id = $1 LIMIT 1
+WHERE account_id = $1 LIMIT 1
 `
 
 type GetAccountBalanceRow struct {
@@ -145,8 +145,8 @@ type GetAccountBalanceRow struct {
 	Balance   int32  `json:"balance"`
 }
 
-func (q *Queries) GetAccountBalance(ctx context.Context, id int64) (GetAccountBalanceRow, error) {
-	row := q.db.QueryRowContext(ctx, getAccountBalance, id)
+func (q *Queries) GetAccountBalance(ctx context.Context, accountID string) (GetAccountBalanceRow, error) {
+	row := q.db.QueryRowContext(ctx, getAccountBalance, accountID)
 	var i GetAccountBalanceRow
 	err := row.Scan(&i.AccountID, &i.Balance)
 	return i, err
@@ -155,12 +155,12 @@ func (q *Queries) GetAccountBalance(ctx context.Context, id int64) (GetAccountBa
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
 SELECT id, account_id, user_id, balance, currency, created_at, updated_at
 FROM accounts
-WHERE id = $1 LIMIT 1
+WHERE account_id = $1 LIMIT 1
 FOR NO KEY UPDATE
 `
 
-func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, error) {
-	row := q.db.QueryRowContext(ctx, getAccountForUpdate, id)
+func (q *Queries) GetAccountForUpdate(ctx context.Context, accountID string) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccountForUpdate, accountID)
 	var i Account
 	err := row.Scan(
 		&i.ID,
@@ -177,11 +177,11 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, e
 const getTransaction = `-- name: GetTransaction :one
 SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
 FROM transactions
-WHERE id = $1 LIMIT 1
+WHERE transaction_id = $1 LIMIT 1
 `
 
-func (q *Queries) GetTransaction(ctx context.Context, id int64) (Transaction, error) {
-	row := q.db.QueryRowContext(ctx, getTransaction, id)
+func (q *Queries) GetTransaction(ctx context.Context, transactionID string) (Transaction, error) {
+	row := q.db.QueryRowContext(ctx, getTransaction, transactionID)
 	var i Transaction
 	err := row.Scan(
 		&i.ID,
