@@ -1,7 +1,7 @@
 CREATE TABLE "accounts" (
     "id" BIGSERIAL PRIMARY KEY,
     "account_id" varchar UNIQUE NOT NULL,
-    "user_id" varchar UNIQUE NOT NULL,
+    "user_id" varchar NOT NULL,
     "balance" int NOT NULL DEFAULT 0,
     "currency" varchar NOT NULL DEFAULT 'EUR',
     "created_at" timestamptz NOT NULL DEFAULT (now()),

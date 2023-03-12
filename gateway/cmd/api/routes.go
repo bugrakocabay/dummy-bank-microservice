@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -20,6 +22,7 @@ func (app *Config) routes() http.Handler {
 	})
 
 	mux.Post("/handle/users/login", app.HandleUsers)
+	mux.Post("/handle/users", app.HandleUsers)
 
 	return mux
 }
@@ -39,16 +42,26 @@ func (app *Config) handleRouter() http.Handler {
 	mux.Get("/transactions", app.HandleTransactions)
 
 	// Users-services
-	mux.Post("/users", app.HandleUsers)
 	mux.Get("/users/{user_id}", app.HandleUsers)
 
 	return mux
 }
 
+type authenticateResponse struct {
+	Status  string  `json:"status"`
+	Payload payload `json:"payload"`
+}
+
+type payload struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiredAt time.Time `json:"expired_at"`
+}
+
 func authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
-		log.Println(token)
 		if token == "" {
 			// Return an error response if the token is missing
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -76,6 +89,12 @@ func authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		var jsonResponseBody authenticateResponse
+		decoder := json.NewDecoder(response.Body)
+		err = decoder.Decode(&jsonResponseBody)
+
+		ctx := context.WithValue(r.Context(), "user_id", jsonResponseBody.Payload.UserID)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

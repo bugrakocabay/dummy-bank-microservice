@@ -28,7 +28,7 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 
 	switch requestPayload.Action {
 	case "create":
-		app.createAccountRequest(w, requestPayload.Create)
+		app.createAccountRequest(w, r, requestPayload.Create)
 	case "get":
 		app.getAccountRequest(w, r)
 	case "update":
@@ -183,11 +183,16 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, payload UpdatePay
 
 type CreatePayload struct {
 	Currency string `json:"currency"`
+	UserID   any    `json:"user_id"`
 }
 
 // createAccountRequest sends an HTTP request to account-service for creating a new account
-func (app *Config) createAccountRequest(w http.ResponseWriter, payload CreatePayload) {
-	jsonData, _ := json.Marshal(payload)
+func (app *Config) createAccountRequest(w http.ResponseWriter, r *http.Request, payload CreatePayload) {
+	requestBody := CreatePayload{
+		Currency: payload.Currency,
+		UserID:   r.Context().Value("user_id"),
+	}
+	jsonData, _ := json.Marshal(requestBody)
 
 	request, err := http.NewRequest(http.MethodPost, "http://account-service/accounts/create", bytes.NewBuffer(jsonData))
 	if err != nil {

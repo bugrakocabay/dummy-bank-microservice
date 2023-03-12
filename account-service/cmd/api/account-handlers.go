@@ -29,6 +29,7 @@ func newAccountResponse(account db.Account) accountResponse {
 
 type createAccountRequest struct {
 	Currency string `json:"currency"`
+	UserID   string `json:"user_id"`
 }
 
 func (server *Server) createAccount(ctx *gin.Context) {
@@ -40,7 +41,7 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	payload := db.CreateAccountParams{
 		AccountID: server.createUUID(),
-		UserID:    server.createUUID(),
+		UserID:    req.UserID,
 		Currency:  req.Currency,
 		Balance:   0,
 	}
