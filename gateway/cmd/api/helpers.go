@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -107,4 +109,30 @@ func (app *Config) sendErrorLog(name string, payload errorLog) error {
 
 	log.Println("logged successfully")
 	return nil
+}
+
+// getAccountUserID fetches the user ID of the given account
+func getAccountUserID(accountID string) (string, error) {
+	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/accounts/%s", accountID), nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var account accountResponse
+	err = json.Unmarshal(body, &account)
+	if err != nil {
+		return "", err
+	}
+
+	// Return the user ID
+	return account.UserID, nil
 }

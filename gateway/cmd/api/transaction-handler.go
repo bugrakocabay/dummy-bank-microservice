@@ -28,7 +28,7 @@ func (app *Config) HandleTransactions(w http.ResponseWriter, r *http.Request) {
 
 	switch requestPayload.Action {
 	case "create":
-		app.createTransactionRequest(w, requestPayload.Create)
+		app.createTransactionRequest(w, r, requestPayload.Create)
 	case "get":
 		app.getTransactionRequest(w, r)
 	case "list":
@@ -46,7 +46,7 @@ type CreateTransactionPayload struct {
 	Description       sql.NullString `json:"description"`
 }
 
-func (app *Config) createTransactionRequest(w http.ResponseWriter, payload CreateTransactionPayload) {
+func (app *Config) createTransactionRequest(w http.ResponseWriter, r *http.Request, payload CreateTransactionPayload) {
 	jsonData, _ := json.Marshal(payload)
 
 	request, err := http.NewRequest(http.MethodPost, "http://account-service/transactions/create", bytes.NewBuffer(jsonData))

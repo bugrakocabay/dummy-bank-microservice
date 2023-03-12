@@ -209,10 +209,21 @@ func (app *Config) createUserRequest(w http.ResponseWriter, payload CreateUserPa
 
 func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "user_id")
+	idInHeader := r.Context().Value("user_id")
+	if id != idInHeader {
+		app.sendErrorLog("getUserRequest", errorLog{
+			StatusCode: 403,
+			Message:    "Unauthorized",
+		})
+		if err := app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
+			return
+		}
+		return
+	}
 
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://user-service/users/%s", id), strings.NewReader(""))
 	if err != nil {
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("getUserRequest", errorLog{
 			StatusCode: 500,
 			Message:    err,
 		})
@@ -236,19 +247,17 @@ func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
 		if err = app.errorJSON(w, errors.New("invalid request"), response.StatusCode); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err,
-		})
 		return
 	} else if response.StatusCode == http.StatusNotFound {
-		app.errorJSON(w, errors.New("not found"), response.StatusCode)
+		if err = app.errorJSON(w, errors.New("not found"), response.StatusCode); err != nil {
+			return
+		}
 		return
 	} else if response.StatusCode != http.StatusOK {
 		if err = app.errorJSON(w, errors.New("error calling account service"), response.StatusCode); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("getUserRequest", errorLog{
 			StatusCode: response.StatusCode,
 			Message:    err,
 		})
@@ -265,7 +274,7 @@ func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
 		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
 			return
 		}
-		app.sendErrorLog("authenticateUserRequest", errorLog{
+		app.sendErrorLog("getUserRequest", errorLog{
 			StatusCode: response.StatusCode,
 			Message:    err,
 		})

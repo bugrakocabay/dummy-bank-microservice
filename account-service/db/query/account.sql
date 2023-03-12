@@ -22,7 +22,7 @@ OFFSET $2;
 -- name: UpdateAccount :one
 UPDATE accounts
 set balance = $2
-WHERE id = $1 RETURNING *;
+WHERE account_id = $1 RETURNING *;
 
 -- name: AddAccountBalance :one
 UPDATE accounts

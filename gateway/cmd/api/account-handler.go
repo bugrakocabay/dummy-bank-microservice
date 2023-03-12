@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -15,6 +16,14 @@ type AccountRequestPayload struct {
 	Action string        `json:"action"`
 	Create CreatePayload `json:"create,omitempty"`
 	Update UpdatePayload `json:"update,omitempty"`
+}
+
+type accountResponse struct {
+	Balance   int32     `json:"balance"`
+	Currency  string    `json:"currency"`
+	AccountID string    `json:"account_id"`
+	UserID    string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +41,7 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 	case "get":
 		app.getAccountRequest(w, r)
 	case "update":
-		app.updateAccountRequest(w, requestPayload.Update)
+		app.updateAccountRequest(w, r, requestPayload.Update)
 	case "delete":
 		app.deleteAccountRequest(w, r)
 	default:
@@ -44,6 +53,19 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 // deleteAccountRequest sends an HTTP request to account-service for fetching an existing account
 func (app *Config) deleteAccountRequest(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "account_id")
+
+	idInHeader := fmt.Sprintf("%v", r.Context().Value("user_id"))
+	userID, err := getAccountUserID(id)
+	if userID != idInHeader {
+		app.sendErrorLog("deleteAccountRequest", errorLog{
+			StatusCode: 403,
+			Message:    "Unauthorized",
+		})
+		if err = app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
+			return
+		}
+		return
+	}
 
 	request, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://account-service/accounts/delete/%s", id), nil)
 	if err != nil {
@@ -121,11 +143,23 @@ func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
 	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
-	var jsonResponseBody any
+	var jsonResponseBody accountResponse
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
 		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
+		return
+	}
+
+	idInHeader := r.Context().Value("user_id")
+	if jsonResponseBody.UserID != idInHeader {
+		app.sendErrorLog("getUserRequest", errorLog{
+			StatusCode: 403,
+			Message:    "Unauthorized",
+		})
+		if err = app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
+			return
+		}
 		return
 	}
 
@@ -138,13 +172,26 @@ func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdatePayload struct {
-	ID      int64 `json:"id" binding:"required,min=1"`
-	Balance int32 `json:"balance" binding:"required"`
+	AccountID string `json:"account_id" binding:"required"`
+	Balance   int32  `json:"balance" binding:"required"`
 }
 
 // updateAccountRequest sends an HTTP request to account-service for updating an existing account
-func (app *Config) updateAccountRequest(w http.ResponseWriter, payload UpdatePayload) {
+func (app *Config) updateAccountRequest(w http.ResponseWriter, r *http.Request, payload UpdatePayload) {
 	jsonData, _ := json.Marshal(payload)
+
+	idInHeader := fmt.Sprintf("%v", r.Context().Value("user_id"))
+	userID, err := getAccountUserID(payload.AccountID)
+	if userID != idInHeader {
+		app.sendErrorLog("updateAccountRequest", errorLog{
+			StatusCode: 403,
+			Message:    "Unauthorized",
+		})
+		if err = app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
+			return
+		}
+		return
+	}
 
 	request, err := http.NewRequest(http.MethodPut, "http://account-service/accounts/update", bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -174,7 +221,7 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, payload UpdatePay
 	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
-	var jsonResponseBody any
+	var jsonResponseBody accountResponse
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {

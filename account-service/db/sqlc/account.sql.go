@@ -279,16 +279,16 @@ func (q *Queries) ListTransactions(ctx context.Context) ([]Transaction, error) {
 const updateAccount = `-- name: UpdateAccount :one
 UPDATE accounts
 set balance = $2
-WHERE id = $1 RETURNING id, account_id, user_id, balance, currency, created_at, updated_at
+WHERE account_id = $1 RETURNING id, account_id, user_id, balance, currency, created_at, updated_at
 `
 
 type UpdateAccountParams struct {
-	ID      int64 `json:"id"`
-	Balance int32 `json:"balance"`
+	AccountID string `json:"account_id"`
+	Balance   int32  `json:"balance"`
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, updateAccount, arg.ID, arg.Balance)
+	row := q.db.QueryRowContext(ctx, updateAccount, arg.AccountID, arg.Balance)
 	var i Account
 	err := row.Scan(
 		&i.ID,

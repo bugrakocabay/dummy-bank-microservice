@@ -19,7 +19,7 @@ func NewServer(store db.Store) *Server {
 	router.GET("/accounts/:account_id", server.getAccount)
 	router.GET("/accounts/balance/:account_id", server.getAccountBalance)
 	router.PUT("/accounts/update", server.updateAccount)
-	router.DELETE("/accounts/delete/:id", server.deleteAccount)
+	router.DELETE("/accounts/delete/:account_id", server.deleteAccount)
 
 	router.POST("/transactions/create", server.createTransfer)
 	router.GET("/transactions/:transaction_id", server.getTransaction)
