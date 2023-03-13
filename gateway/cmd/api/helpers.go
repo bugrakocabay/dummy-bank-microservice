@@ -67,7 +67,8 @@ func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) er
 
 	var payload jsonResponse
 	payload.Error = true
-	payload.Message = err.Error()
+	payload.Message = "fail"
+	payload.Data = err.Error()
 
 	return app.writeJSON(w, statusCode, payload)
 }
@@ -82,7 +83,7 @@ type errorLog struct {
 	StatusCode int `json:"status_code"`
 }
 
-func (app *Config) sendErrorLog(name string, payload errorLog) error {
+func (app *Config) sendErrorLog(name string, payload errorLog) {
 	arg := JSONPayload{
 		Name: name,
 		Data: payload,
@@ -90,7 +91,7 @@ func (app *Config) sendErrorLog(name string, payload errorLog) error {
 	jsonData, err := json.Marshal(arg)
 	if err != nil {
 		log.Println("sendErrorLog error: cant marshal json:", err)
-		return err
+		return
 	}
 	request, err := http.NewRequest(http.MethodPost, "http://logger-service/logs/create", bytes.NewBuffer(jsonData))
 
@@ -98,17 +99,17 @@ func (app *Config) sendErrorLog(name string, payload errorLog) error {
 	response, err := client.Do(request)
 	if err != nil {
 		log.Println("sendErrorLog error: cant send response:", err)
-		return err
+		return
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusCreated {
 		log.Println("sendErrorLog error: calling auth service:", err)
-		return err
+		return
 	}
 
 	log.Println("logged successfully")
-	return nil
+	return
 }
 
 // getAccountUserID fetches the user ID of the given account

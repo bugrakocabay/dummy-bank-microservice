@@ -48,11 +48,11 @@ func (app *Config) handleRouter() http.Handler {
 }
 
 type authenticateResponse struct {
-	Status  string  `json:"status"`
-	Payload payload `json:"payload"`
+	Status  string          `json:"status"`
+	Payload responsePayload `json:"payload"`
 }
 
-type payload struct {
+type responsePayload struct {
 	ID        string    `json:"id"`
 	UserID    string    `json:"user_id"`
 	IssuedAt  time.Time `json:"issued_at"`
