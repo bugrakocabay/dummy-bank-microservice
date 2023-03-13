@@ -82,27 +82,6 @@ func (app *Config) loginUserRequest(w http.ResponseWriter, payload LoginUserPayl
 	var jsonResponseBody any
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
-
-	if response.StatusCode == http.StatusBadRequest {
-		if err = app.errorJSON(w, errors.New("invalid request"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("loginUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    jsonResponseBody,
-		})
-		return
-	} else if response.StatusCode != http.StatusOK {
-		if err = app.errorJSON(w, errors.New("error calling user service"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("loginUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    jsonResponseBody,
-		})
-		return
-	}
-
 	if err != nil {
 		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
 			return
@@ -116,10 +95,15 @@ func (app *Config) loginUserRequest(w http.ResponseWriter, payload LoginUserPayl
 
 	var resp jsonResponse
 	resp.Error = false
-	resp.Message = "success"
 	resp.Data = jsonResponseBody
 
-	if err = app.writeJSON(w, http.StatusOK, resp); err != nil {
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
 		return
 	}
 }
@@ -165,27 +149,6 @@ func (app *Config) createUserRequest(w http.ResponseWriter, payload CreateUserPa
 	var jsonResponseBody any
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
-
-	if response.StatusCode == http.StatusBadRequest {
-		if err = app.errorJSON(w, errors.New("invalid request"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("createUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    jsonResponseBody,
-		})
-		return
-	} else if response.StatusCode != http.StatusCreated {
-		if err = app.errorJSON(w, errors.New("error calling user service"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("createUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    jsonResponseBody,
-		})
-		return
-	}
-
 	if err != nil {
 		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
 			return
@@ -199,10 +162,15 @@ func (app *Config) createUserRequest(w http.ResponseWriter, payload CreateUserPa
 
 	var resp jsonResponse
 	resp.Error = false
-	resp.Message = "success"
 	resp.Data = jsonResponseBody
 
-	if err = app.writeJSON(w, http.StatusCreated, resp); err != nil {
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
 		return
 	}
 }
@@ -243,27 +211,6 @@ func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode == http.StatusBadRequest {
-		if err = app.errorJSON(w, errors.New("invalid request"), response.StatusCode); err != nil {
-			return
-		}
-		return
-	} else if response.StatusCode == http.StatusNotFound {
-		if err = app.errorJSON(w, errors.New("not found"), response.StatusCode); err != nil {
-			return
-		}
-		return
-	} else if response.StatusCode != http.StatusOK {
-		if err = app.errorJSON(w, errors.New("error calling account service"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("getUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err,
-		})
-		return
-	}
-
 	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
@@ -283,10 +230,15 @@ func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
 
 	var resp jsonResponse
 	resp.Error = false
-	resp.Message = "success"
 	resp.Data = jsonResponseBody
 
-	if err = app.writeJSON(w, http.StatusOK, resp); err != nil {
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
 		return
 	}
 }

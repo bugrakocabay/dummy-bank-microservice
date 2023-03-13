@@ -176,7 +176,7 @@ func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
 
 	idInHeader := r.Context().Value("user_id")
 	if jsonResponseBody.UserID != idInHeader {
-		app.sendErrorLog("getUserRequest", errorLog{
+		app.sendErrorLog("getAccountRequest", errorLog{
 			StatusCode: 403,
 			Message:    "Unauthorized",
 		})

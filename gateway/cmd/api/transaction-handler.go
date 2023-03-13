@@ -22,7 +22,9 @@ func (app *Config) HandleTransactions(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errorJSON(w, err)
+		if err = app.errorJSON(w, err); err != nil {
+			return
+		}
 		return
 	}
 
@@ -34,7 +36,9 @@ func (app *Config) HandleTransactions(w http.ResponseWriter, r *http.Request) {
 	case "list":
 		app.listTransactionsRequest(w, r)
 	default:
-		app.errorJSON(w, errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action)))
+		if err = app.errorJSON(w, errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action))); err != nil {
+			return
+		}
 		return
 	}
 }
@@ -51,25 +55,29 @@ func (app *Config) createTransactionRequest(w http.ResponseWriter, r *http.Reque
 
 	request, err := http.NewRequest(http.MethodPost, "http://account-service/transactions/create", bytes.NewBuffer(jsonData))
 	if err != nil {
-		app.errorJSON(w, err, 500)
+		app.sendErrorLog("createTransactionRequest", errorLog{
+			StatusCode: 500,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, err, 500); err != nil {
+			return
+		}
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, err, response.StatusCode)
+		app.sendErrorLog("createTransactionRequest", errorLog{
+			StatusCode: response.StatusCode,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
+			return
+		}
 		return
 	}
 	defer response.Body.Close()
-
-	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
-		return
-	} else if response.StatusCode != http.StatusCreated {
-		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)
-		return
-	}
 
 	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
@@ -78,16 +86,29 @@ func (app *Config) createTransactionRequest(w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
+		app.sendErrorLog("createTransactionRequest", errorLog{
+			StatusCode: response.StatusCode,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
+			return
+		}
 		return
 	}
 
 	var resp jsonResponse
 	resp.Error = false
-	resp.Message = "success"
 	resp.Data = jsonResponseBody
 
-	app.writeJSON(w, http.StatusCreated, resp)
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
+		return
+	}
 }
 
 func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request) {
@@ -95,28 +116,29 @@ func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request)
 
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions/%s", id), nil)
 	if err != nil {
-		app.errorJSON(w, err, 500)
+		app.sendErrorLog("getTransactionRequest", errorLog{
+			StatusCode: 500,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, err, 500); err != nil {
+			return
+		}
 		return
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, err, response.StatusCode)
+		app.sendErrorLog("getTransactionRequest", errorLog{
+			StatusCode: response.StatusCode,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
+			return
+		}
 		return
 	}
 	defer response.Body.Close()
-
-	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
-		return
-	} else if response.StatusCode == http.StatusNotFound {
-		app.errorJSON(w, errors.New("not found"), response.StatusCode)
-		return
-	} else if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)
-		return
-	}
 
 	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
@@ -125,22 +147,39 @@ func (app *Config) getTransactionRequest(w http.ResponseWriter, r *http.Request)
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
+		app.sendErrorLog("getTransactionRequest", errorLog{
+			StatusCode: response.StatusCode,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
+			return
+		}
 		return
 	}
 
 	var resp jsonResponse
 	resp.Error = false
-	resp.Message = "success"
 	resp.Data = jsonResponseBody
 
-	app.writeJSON(w, http.StatusOK, resp)
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
+		return
+	}
 }
 
 func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Request) {
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/transactions"), strings.NewReader(""))
 
 	if err != nil {
+		app.sendErrorLog("listTransactionsRequest", errorLog{
+			StatusCode: 500,
+			Message:    err.Error(),
+		})
 		app.errorJSON(w, err, 500)
 		return
 	}
@@ -148,21 +187,16 @@ func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Reques
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.errorJSON(w, err, response.StatusCode)
+		app.sendErrorLog("listTransactionsRequest", errorLog{
+			StatusCode: response.StatusCode,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
+			return
+		}
 		return
 	}
 	defer response.Body.Close()
-
-	if response.StatusCode == http.StatusBadRequest {
-		app.errorJSON(w, errors.New("invalid request"), response.StatusCode)
-		return
-	} else if response.StatusCode == http.StatusNotFound {
-		app.errorJSON(w, errors.New("not found"), response.StatusCode)
-		return
-	} else if response.StatusCode != http.StatusOK {
-		app.errorJSON(w, errors.New("error calling transaction service"), response.StatusCode)
-		return
-	}
 
 	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
@@ -171,14 +205,27 @@ func (app *Config) listTransactionsRequest(w http.ResponseWriter, r *http.Reques
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.errorJSON(w, errors.New("error reading response body"), response.StatusCode)
+		app.sendErrorLog("listTransactionsRequest", errorLog{
+			StatusCode: response.StatusCode,
+			Message:    err.Error(),
+		})
+		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
+			return
+		}
 		return
 	}
 
 	var resp jsonResponse
 	resp.Error = false
-	resp.Message = "success"
 	resp.Data = jsonResponseBody
 
-	app.writeJSON(w, http.StatusOK, resp)
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
+		return
+	}
 }
