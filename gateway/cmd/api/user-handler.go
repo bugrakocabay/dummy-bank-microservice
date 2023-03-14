@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+const (
+	userServiceURL = "http://user-service"
+)
+
 type UserRequestPayload struct {
 	Action string            `json:"action"`
 	Create CreateUserPayload `json:"create,omitempty"`
@@ -21,7 +25,7 @@ func (app *Config) HandleUsers(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		if err = app.errorJSON(w, err); err != nil {
+		if err = app.errorJSON(w, "HandleUsers", err); err != nil {
 			return
 		}
 		return
@@ -35,7 +39,7 @@ func (app *Config) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	case "login":
 		app.loginUserRequest(w, requestPayload.Login)
 	default:
-		if err = app.errorJSON(w, errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action))); err != nil {
+		if err = app.errorJSON(w, "HandleUsers", errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action))); err != nil {
 			return
 		}
 		return
@@ -47,50 +51,29 @@ type LoginUserPayload struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (app *Config) loginUserRequest(w http.ResponseWriter, payload LoginUserPayload) {
+func (app *Config) loginUserRequest(w http.ResponseWriter, payload LoginUserPayload) error {
 	jsonData, _ := json.Marshal(payload)
 
-	request, err := http.NewRequest(http.MethodPost, "http://user-service/users/login", bytes.NewBuffer(jsonData))
+	reqURL := fmt.Sprintf("%s/users/login", userServiceURL)
+	request, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		if err = app.errorJSON(w, err, 500); err != nil {
-			return
-		}
-		app.sendErrorLog("loginUserRequest", errorLog{
-			StatusCode: 500,
-			Message:    err,
-		})
-		return
+		return app.errorJSON(w, "loginUserRequest", err, 500)
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("loginUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err,
-		})
-		return
+		return app.errorJSON(w, "loginUserRequest", err, response.StatusCode)
 	}
 	defer response.Body.Close()
 
-	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
 	var jsonResponseBody any
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("loginUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err,
-		})
-		return
+		return app.errorJSON(w, "loginUserRequest", errors.New("error reading response body"), response.StatusCode)
 	}
 
 	var resp jsonResponse
@@ -103,9 +86,7 @@ func (app *Config) loginUserRequest(w http.ResponseWriter, payload LoginUserPayl
 		resp.Message = "success"
 	}
 
-	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
-		return
-	}
+	return app.writeJSON(w, "loginUserRequest", response.StatusCode, resp)
 }
 
 type CreateUserPayload struct {
@@ -114,50 +95,29 @@ type CreateUserPayload struct {
 	Password  string `json:"password" binding:"required"`
 }
 
-func (app *Config) createUserRequest(w http.ResponseWriter, payload CreateUserPayload) {
+func (app *Config) createUserRequest(w http.ResponseWriter, payload CreateUserPayload) error {
 	jsonData, _ := json.Marshal(payload)
 
-	request, err := http.NewRequest(http.MethodPost, "http://user-service/users/create", bytes.NewBuffer(jsonData))
+	reqURL := fmt.Sprintf("%s/users/create", userServiceURL)
+	request, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		if err = app.errorJSON(w, err, 500); err != nil {
-			return
-		}
-		app.sendErrorLog("createUserRequest", errorLog{
-			StatusCode: 500,
-			Message:    err,
-		})
-		return
+		return app.errorJSON(w, "createUserRequest", err, 500)
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("createUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err,
-		})
-		return
+		return app.errorJSON(w, "createUserRequest", err, response.StatusCode)
 	}
 	defer response.Body.Close()
 
-	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
 	var jsonResponseBody any
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("createUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err,
-		})
-		return
+		return app.errorJSON(w, "createUserRequest", errors.New("error reading response body"), response.StatusCode)
 	}
 
 	var resp jsonResponse
@@ -170,62 +130,35 @@ func (app *Config) createUserRequest(w http.ResponseWriter, payload CreateUserPa
 		resp.Message = "success"
 	}
 
-	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
-		return
-	}
+	return app.writeJSON(w, "createUserRequest", response.StatusCode, resp)
 }
 
-func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
+func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "user_id")
 	idInHeader := r.Context().Value("user_id")
 	if id != idInHeader {
-		app.sendErrorLog("getUserRequest", errorLog{
-			StatusCode: 403,
-			Message:    "Unauthorized",
-		})
-		if err := app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "getUserRequest", errors.New("this is not yours"), 403)
 	}
 
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://user-service/users/%s", id), strings.NewReader(""))
 	if err != nil {
-		app.sendErrorLog("getUserRequest", errorLog{
-			StatusCode: 500,
-			Message:    err,
-		})
-		if err = app.errorJSON(w, err, 500); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "getUserRequest", err, 500)
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "getUserRequest", err, response.StatusCode)
 	}
 	defer response.Body.Close()
 
-	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
 	var jsonResponseBody any
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
-			return
-		}
-		app.sendErrorLog("getUserRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err,
-		})
-		return
+		return app.errorJSON(w, "getUserRequest", errors.New("error reading response body"), response.StatusCode)
 	}
 
 	var resp jsonResponse
@@ -238,7 +171,5 @@ func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) {
 		resp.Message = "success"
 	}
 
-	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
-		return
-	}
+	return app.writeJSON(w, "getUserRequest", response.StatusCode, resp)
 }

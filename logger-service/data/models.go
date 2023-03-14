@@ -32,8 +32,25 @@ func New(mongo *mongo.Client) Models {
 	}
 }
 
-func (l *LogEntry) Insert(entry LogEntry) error {
-	collection := client.Database("logs").Collection("logs")
+func (l *LogEntry) InsertError(entry LogEntry) error {
+	collection := client.Database("logs").Collection("error-logs")
+
+	_, err := collection.InsertOne(context.TODO(), LogEntry{
+		Name:      entry.Name,
+		Data:      entry.Data,
+		CreatedAt: time.Now(),
+	})
+
+	if err != nil {
+		log.Println("error inserting into logs:", err)
+		return err
+	}
+
+	return nil
+}
+
+func (l *LogEntry) InsertRequest(entry LogEntry) error {
+	collection := client.Database("logs").Collection("request-logs")
 
 	_, err := collection.InsertOne(context.TODO(), LogEntry{
 		Name:      entry.Name,

@@ -12,6 +12,11 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+const (
+	accountServiceURL = "http://account-service"
+	maxBytes          = 10485376
+)
+
 type AccountRequestPayload struct {
 	Action string        `json:"action"`
 	Create CreatePayload `json:"create,omitempty"`
@@ -31,8 +36,7 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errorJSON(w, err)
-		return
+		app.errorJSON(w, "HandleAccounts", err)
 	}
 
 	switch requestPayload.Action {
@@ -45,145 +49,85 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 	case "delete":
 		app.deleteAccountRequest(w, r)
 	default:
-		if err = app.errorJSON(w, errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action))); err != nil {
-			return
-		}
-		return
+		app.errorJSON(w, "HandleAccounts", errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action)))
 	}
 }
 
-// deleteAccountRequest sends an HTTP request to account-service for fetching an existing account
-func (app *Config) deleteAccountRequest(w http.ResponseWriter, r *http.Request) {
+func (app *Config) deleteAccountRequest(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "account_id")
+	userID := fmt.Sprintf("%v", r.Context().Value("user_id"))
 
-	idInHeader := fmt.Sprintf("%v", r.Context().Value("user_id"))
-	userID, err := getAccountUserID(id)
-	if userID != idInHeader {
-		app.sendErrorLog("deleteAccountRequest", errorLog{
-			StatusCode: 403,
-			Message:    "Unauthorized",
-		})
-		if err = app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
-			return
-		}
-		return
-	}
-
-	request, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://account-service/accounts/delete/%s", id), nil)
+	// Check if the user is authorized to delete the account
+	accountUserID, err := getAccountUserID(id)
 	if err != nil {
-		app.sendErrorLog("deleteAccountRequest", errorLog{
-			StatusCode: 500,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, err, 500); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "deleteAccountRequest", err, http.StatusInternalServerError)
+	}
+	if accountUserID != userID {
+		return app.errorJSON(w, "deleteAccountRequest", errors.New("you are not authorized to delete this account"), http.StatusForbidden)
 	}
 
+	// Send DELETE request to account service
+	reqURL := fmt.Sprintf("%s/accounts/delete/%s", accountServiceURL, id)
+	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return app.errorJSON(w, "deleteAccountRequest", err, http.StatusInternalServerError)
+	}
 	client := &http.Client{}
-	response, err := client.Do(request)
+	resp, err := client.Do(req)
 	if err != nil {
-		app.sendErrorLog("deleteAccountRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "deleteAccountRequest", err, resp.StatusCode)
 	}
-	defer response.Body.Close()
+	defer resp.Body.Close()
 
-	maxBytes := 10485376 // 1mgb
-	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
-
-	var jsonResponseBody any
-	decoder := json.NewDecoder(response.Body)
-	err = decoder.Decode(&jsonResponseBody)
+	// Decode JSON response
+	var respBody struct {
+		Error   bool        `json:"error"`
+		Data    interface{} `json:"data"`
+		Message string      `json:"message"`
+	}
+	err = json.NewDecoder(http.MaxBytesReader(w, resp.Body, maxBytes)).Decode(&respBody)
 	if err != nil {
-		app.sendErrorLog("deleteAccountRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "deleteAccountRequest", err, resp.StatusCode)
 	}
 
-	var resp jsonResponse
-	resp.Error = false
-	resp.Data = jsonResponseBody
-
-	if response.StatusCode != http.StatusOK {
-		resp.Message = "fail"
-	} else {
-		resp.Message = "success"
+	// Write JSON response
+	statusCode := resp.StatusCode
+	if statusCode != http.StatusOK {
+		respBody.Message = "fail"
 	}
-
-	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
-		return
-	}
+	return app.writeJSON(w, "deleteAccountRequest", statusCode, respBody)
 }
 
 // getAccountRequest sends an HTTP request to account-service for fetching an existing account
-func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
+func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) error {
 	id := chi.URLParam(r, "account_id")
 
-	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://account-service/accounts/%s", id), strings.NewReader(""))
+	reqURL := fmt.Sprintf("%s/accounts/%s", accountServiceURL, id)
+	request, err := http.NewRequest(http.MethodGet, reqURL, strings.NewReader(""))
 	if err != nil {
-		app.sendErrorLog("getAccountRequest", errorLog{
-			StatusCode: 500,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, err, 500); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "getAccountRequest", err, 500)
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.sendErrorLog("getAccountRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "getAccountRequest", err, response.StatusCode)
+
 	}
 	defer response.Body.Close()
 
-	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
 	var jsonResponseBody accountResponse
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.sendErrorLog("getAccountRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "getAccountRequest", errors.New("error reading response body"), response.StatusCode)
 	}
 
 	idInHeader := r.Context().Value("user_id")
 	if jsonResponseBody.UserID != idInHeader {
-		app.sendErrorLog("getAccountRequest", errorLog{
-			StatusCode: 403,
-			Message:    "Unauthorized",
-		})
-		if err = app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "getAccountRequest", errors.New("this is not yours"), 403)
 	}
 
 	var resp jsonResponse
@@ -196,9 +140,7 @@ func (app *Config) getAccountRequest(w http.ResponseWriter, r *http.Request) {
 		resp.Message = "success"
 	}
 
-	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
-		return
-	}
+	return app.writeJSON(w, "getAccountRequest", response.StatusCode, resp)
 }
 
 type UpdatePayload struct {
@@ -207,63 +149,39 @@ type UpdatePayload struct {
 }
 
 // updateAccountRequest sends an HTTP request to account-service for updating an existing account
-func (app *Config) updateAccountRequest(w http.ResponseWriter, r *http.Request, payload UpdatePayload) {
+func (app *Config) updateAccountRequest(w http.ResponseWriter, r *http.Request, payload UpdatePayload) error {
 	jsonData, _ := json.Marshal(payload)
 
 	idInHeader := fmt.Sprintf("%v", r.Context().Value("user_id"))
 	userID, err := getAccountUserID(payload.AccountID)
 	if userID != idInHeader {
-		app.sendErrorLog("updateAccountRequest", errorLog{
-			StatusCode: 403,
-			Message:    "Unauthorized",
-		})
-		if err = app.errorJSON(w, errors.New("this is not yours"), 403); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "updateAccountRequest", errors.New("this is not yours"), 403)
 	}
 
-	request, err := http.NewRequest(http.MethodPut, "http://account-service/accounts/update", bytes.NewBuffer(jsonData))
+	reqURL := fmt.Sprintf("%s/accounts/update", accountServiceURL)
+	request, err := http.NewRequest(http.MethodPut, reqURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		app.sendErrorLog("updateAccountRequest", errorLog{
-			StatusCode: 500,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, err, 500); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "updateAccountRequest", err, 500)
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.sendErrorLog("updateAccountRequest", errorLog{
+		app.sendErrorLog("updateAccountRequest", Log{
 			StatusCode: response.StatusCode,
 			Message:    err.Error(),
 		})
-		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "updateAccountRequest", err, response.StatusCode)
 	}
 	defer response.Body.Close()
 
-	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
 	var jsonResponseBody accountResponse
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.sendErrorLog("updateAccountRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "updateAccountRequest", errors.New("error reading response body"), response.StatusCode)
 	}
 
 	var resp jsonResponse
@@ -276,9 +194,7 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, r *http.Request, 
 		resp.Message = "success"
 	}
 
-	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
-		return
-	}
+	return app.writeJSON(w, "updateAccountRequest", response.StatusCode, resp)
 }
 
 type CreatePayload struct {
@@ -287,54 +203,33 @@ type CreatePayload struct {
 }
 
 // createAccountRequest sends an HTTP request to account-service for creating a new account
-func (app *Config) createAccountRequest(w http.ResponseWriter, r *http.Request, payload CreatePayload) {
+func (app *Config) createAccountRequest(w http.ResponseWriter, r *http.Request, payload CreatePayload) error {
 	requestBody := CreatePayload{
 		Currency: payload.Currency,
 		UserID:   r.Context().Value("user_id"),
 	}
 	jsonData, _ := json.Marshal(requestBody)
 
-	request, err := http.NewRequest(http.MethodPost, "http://account-service/accounts/create", bytes.NewBuffer(jsonData))
+	reqURL := fmt.Sprintf("%s/accounts/create", accountServiceURL)
+	request, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		app.sendErrorLog("createAccountRequest", errorLog{
-			StatusCode: 500,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, err, 500); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "createAccountRequest", err, 500)
 	}
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.sendErrorLog("createAccountRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, err, response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "createAccountRequest", err, response.StatusCode)
 	}
 	defer response.Body.Close()
 
-	maxBytes := 10485376 // 1mgb
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
 	var jsonResponseBody any
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
-		app.sendErrorLog("createAccountRequest", errorLog{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
-		if err = app.errorJSON(w, errors.New("error reading response body"), response.StatusCode); err != nil {
-			return
-		}
-		return
+		return app.errorJSON(w, "createAccountRequest", errors.New("error reading response body"), response.StatusCode)
 	}
 
 	var resp jsonResponse
@@ -347,7 +242,5 @@ func (app *Config) createAccountRequest(w http.ResponseWriter, r *http.Request, 
 		resp.Message = "success"
 	}
 
-	if err = app.writeJSON(w, response.StatusCode, resp); err != nil {
-		return
-	}
+	return app.writeJSON(w, "createAccountRequest", response.StatusCode, resp)
 }

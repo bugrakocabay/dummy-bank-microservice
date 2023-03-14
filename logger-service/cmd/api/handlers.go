@@ -12,7 +12,7 @@ type JSONPayload struct {
 	Data any    `json:"data"`
 }
 
-func (app *Config) WriteLog(w http.ResponseWriter, r *http.Request) {
+func (app *Config) WriteErrorLog(w http.ResponseWriter, r *http.Request) {
 	var requestPayload JSONPayload
 
 	err := app.readJSON(w, r, &requestPayload)
@@ -26,7 +26,35 @@ func (app *Config) WriteLog(w http.ResponseWriter, r *http.Request) {
 		Data: requestPayload.Data,
 	}
 
-	err = app.Models.LogEntry.Insert(event)
+	err = app.Models.LogEntry.InsertError(event)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	resp := jsonResponse{
+		Error:   false,
+		Message: "success",
+	}
+
+	app.writeJSON(w, http.StatusCreated, resp)
+}
+
+func (app *Config) WriteRequestLog(w http.ResponseWriter, r *http.Request) {
+	var requestPayload JSONPayload
+
+	err := app.readJSON(w, r, &requestPayload)
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	event := data.LogEntry{
+		Name: requestPayload.Name,
+		Data: requestPayload.Data,
+	}
+
+	err = app.Models.LogEntry.InsertRequest(event)
 	if err != nil {
 		app.errorJSON(w, err)
 		return

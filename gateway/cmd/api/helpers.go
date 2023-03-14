@@ -18,7 +18,6 @@ type jsonResponse struct {
 }
 
 func (app *Config) readJSON(w http.ResponseWriter, r *http.Request, data any) error {
-	maxBytes := 10485376 // 1mgb
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
 	dec := json.NewDecoder(r.Body)
@@ -35,7 +34,13 @@ func (app *Config) readJSON(w http.ResponseWriter, r *http.Request, data any) er
 	return nil
 }
 
-func (app *Config) writeJSON(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
+func (app *Config) writeJSON(w http.ResponseWriter, name string, status int, data any, headers ...http.Header) error {
+	logPayload := Log{
+		StatusCode: status,
+		Message:    data,
+	}
+	defer app.sendRequestLog(name, logPayload)
+
 	out, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -57,8 +62,13 @@ func (app *Config) writeJSON(w http.ResponseWriter, status int, data any, header
 	return nil
 }
 
-func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) error {
-	log.Println(err)
+func (app *Config) errorJSON(w http.ResponseWriter, name string, err error, status ...int) error {
+	logPayload := Log{
+		StatusCode: status[0],
+		Message:    err,
+	}
+	defer app.sendErrorLog(name, logPayload)
+
 	statusCode := http.StatusBadRequest
 
 	if len(status) > 0 {
@@ -70,7 +80,7 @@ func (app *Config) errorJSON(w http.ResponseWriter, err error, status ...int) er
 	payload.Message = "fail"
 	payload.Data = err.Error()
 
-	return app.writeJSON(w, statusCode, payload)
+	return app.writeJSON(w, "error", statusCode, payload)
 }
 
 type JSONPayload struct {
@@ -78,12 +88,12 @@ type JSONPayload struct {
 	Data any    `json:"data"`
 }
 
-type errorLog struct {
+type Log struct {
 	Message    any `json:"message"`
 	StatusCode int `json:"status_code"`
 }
 
-func (app *Config) sendErrorLog(name string, payload errorLog) {
+func (app *Config) sendErrorLog(name string, payload Log) {
 	arg := JSONPayload{
 		Name: name,
 		Data: payload,
@@ -93,7 +103,36 @@ func (app *Config) sendErrorLog(name string, payload errorLog) {
 		log.Println("sendErrorLog error: cant marshal json:", err)
 		return
 	}
-	request, err := http.NewRequest(http.MethodPost, "http://logger-service/logs/create", bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest(http.MethodPost, "http://logger-service/logs/create-error", bytes.NewBuffer(jsonData))
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		log.Println("sendErrorLog error: cant send response:", err)
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusCreated {
+		log.Println("sendErrorLog error: calling auth service:", err)
+		return
+	}
+
+	log.Println("logged successfully")
+	return
+}
+
+func (app *Config) sendRequestLog(name string, payload Log) {
+	arg := JSONPayload{
+		Name: name,
+		Data: payload,
+	}
+	jsonData, err := json.Marshal(arg)
+	if err != nil {
+		log.Println("sendErrorLog error: cant marshal json:", err)
+		return
+	}
+	request, err := http.NewRequest(http.MethodPost, "http://logger-service/logs/create-request", bytes.NewBuffer(jsonData))
 
 	client := &http.Client{}
 	response, err := client.Do(request)

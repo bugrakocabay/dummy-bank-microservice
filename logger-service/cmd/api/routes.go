@@ -9,7 +9,8 @@ import (
 func (app *Config) routes() http.Handler {
 	mux := chi.NewRouter()
 
-	mux.Post("/logs/create", app.WriteLog)
+	mux.Post("/logs/create-error", app.WriteErrorLog)
+	mux.Post("/logs/create-request", app.WriteRequestLog)
 	mux.Get("/logs", app.ReadLogs)
 	mux.Get("/logs/{id}", app.ReadOne)
 
