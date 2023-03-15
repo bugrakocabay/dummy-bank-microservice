@@ -3,10 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
-
 	db "github.com/bugrakocabay/dummy-bank-microservice/account-service/db/sqlc"
 	_ "github.com/lib/pq"
+	"log"
 )
 
 const webPort = "80"
@@ -14,8 +13,11 @@ const webPort = "80"
 func main() {
 	log.Printf("Starting Account service on port: %s", webPort)
 
-	// TODO: Use env variables
-	conn, err := sql.Open("postgres", "postgresql://postgres:postgres@account_db_postgres:5432/accounts?sslmode=disable")
+	config, err := LoadConfig(".")
+	if err != nil {
+		log.Fatal("error while reading env: ", err)
+	}
+	conn, err := sql.Open("postgres", config.AccountDbConnString)
 	if err != nil {
 		log.Fatal("Cannot connect to DB:", err)
 	}
