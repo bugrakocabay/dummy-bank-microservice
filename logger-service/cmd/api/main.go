@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	webPort  = "80"
-	mongoURL = "mongodb://mongo:27017"
+	webPort = "80"
 )
 
 var client *mongo.Client
@@ -26,7 +25,12 @@ type Config struct {
 func main() {
 	log.Printf("Starting Logging service on port: %s", webPort)
 
-	mongoClient, err := connectToMongo()
+	config, err := LoadConfig()
+	if err != nil {
+		log.Fatal("Error with loading env: ", err)
+	}
+
+	mongoClient, err := connectToMongo(config.MongoURI, config.Username, config.Password)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -59,12 +63,12 @@ func main() {
 	}
 }
 
-func connectToMongo() (*mongo.Client, error) {
+func connectToMongo(mongoURI, username, password string) (*mongo.Client, error) {
 	// create connection options
-	clientOptions := options.Client().ApplyURI(mongoURL)
+	clientOptions := options.Client().ApplyURI(mongoURI)
 	clientOptions.SetAuth(options.Credential{
-		Username: "admin",
-		Password: "password",
+		Username: username,
+		Password: password,
 	})
 
 	// connect

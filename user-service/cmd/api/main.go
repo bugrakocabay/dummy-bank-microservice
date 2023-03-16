@@ -14,8 +14,12 @@ const webPort = "80"
 func main() {
 	log.Printf("Starting User service on port: %s", webPort)
 
-	// TODO: Use env variables
-	conn, err := sql.Open("postgres", "postgresql://postgres:postgres@user_db_postgres:5432/users?sslmode=disable")
+	config, err := LoadConfig()
+	if err != nil {
+		log.Fatal("Error with loading env: ", err)
+	}
+
+	conn, err := sql.Open("postgres", config.UserDbConnString)
 	if err != nil {
 		log.Fatal("Cannot connect to DB:", err)
 	}

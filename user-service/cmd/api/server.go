@@ -5,6 +5,7 @@ import (
 	"github.com/bugrakocabay/dummy-bank-microservice/user-service/cmd/token"
 	db "github.com/bugrakocabay/dummy-bank-microservice/user-service/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"log"
 )
 
 type Server struct {
@@ -14,7 +15,12 @@ type Server struct {
 }
 
 func NewServer(store db.Store) (*Server, error) {
-	tokenMaker, err := token.NewPasetoMaker("12345678901234567890123456789012") // TODO: move to env variable
+	config, err := LoadConfig()
+	if err != nil {
+		log.Fatal("Error with loading env: ", err)
+	}
+
+	tokenMaker, err := token.NewPasetoMaker(config.SymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create token maker: %w", err)
 	}
