@@ -1,12 +1,14 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/dummy-bank-scripts/handlers"
+	"github.com/dummy-bank-scripts/requests"
 )
 
 func main() {
-	id := handlers.CreateUser()
-	fmt.Println(id)
+	id := requests.CreateUser()
+	accessToken := requests.Login(id)
+	accountIDs := requests.GetAllAccounts(accessToken)
+	randomAccountID := accountIDs[requests.RandomInt(0, int64(len(accountIDs)))]
+	myAccountID := requests.CreateAccount(accessToken)
+
 }

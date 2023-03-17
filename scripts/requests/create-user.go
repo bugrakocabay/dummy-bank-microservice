@@ -1,4 +1,4 @@
-package handlers
+package requests
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ type CreateUserData struct {
 	Password  string `json:"password"`
 }
 
-type Response struct {
+type GetUserResponse struct {
 	Error   bool     `json:"error"`
 	Message string   `json:"message"`
 	Data    UserData `json:"data"`
@@ -57,7 +57,7 @@ func CreateUser() string {
 	}
 	defer response.Body.Close()
 
-	var resp Response
+	var resp GetUserResponse
 	if err = json.NewDecoder(response.Body).Decode(&resp); err != nil {
 		log.Fatalf("failed to decode response body: %v", err)
 	}

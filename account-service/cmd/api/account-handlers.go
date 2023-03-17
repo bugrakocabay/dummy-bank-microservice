@@ -56,6 +56,33 @@ func (server *Server) createAccount(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, resp)
 }
 
+type addBalanceRequest struct {
+	AccountID string `json:"account_id"`
+	Amount    int32  `json:"amount"`
+}
+
+func (server *Server) addAccountBalance(ctx *gin.Context) {
+	var req addBalanceRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	payload := db.AddAccountBalanceParams{
+		AccountID: req.AccountID,
+		Amount:    req.Amount,
+	}
+
+	account, err := server.store.AddAccountBalance(ctx, payload)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	resp := newAccountResponse(account)
+	ctx.JSON(http.StatusCreated, resp)
+}
+
 type getAccountRequest struct {
 	AccountID string `uri:"account_id" binding:"required,min=1"`
 }
@@ -154,4 +181,18 @@ func (server *Server) deleteAccount(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, struct{}{})
+}
+
+func (server *Server) listAccounts(ctx *gin.Context) {
+	accounts, err := server.store.ListAccounts(ctx)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, accounts)
 }

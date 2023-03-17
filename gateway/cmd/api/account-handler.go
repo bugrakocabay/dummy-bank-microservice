@@ -18,9 +18,10 @@ const (
 )
 
 type AccountRequestPayload struct {
-	Action string        `json:"action"`
-	Create CreatePayload `json:"create,omitempty"`
-	Update UpdatePayload `json:"update,omitempty"`
+	Action  string        `json:"action"`
+	Create  CreatePayload `json:"create,omitempty"`
+	Update  UpdatePayload `json:"update,omitempty"`
+	Balance AddBalance    `json:"balance,omitempty"`
 }
 
 type accountResponse struct {
@@ -48,6 +49,10 @@ func (app *Config) HandleAccounts(w http.ResponseWriter, r *http.Request) {
 		app.updateAccountRequest(w, r, requestPayload.Update)
 	case "delete":
 		app.deleteAccountRequest(w, r)
+	case "list":
+		app.listAccountRequest(w, r)
+	case "balance":
+		app.addBalanceRequest(w, r, requestPayload.Balance)
 	default:
 		app.errorJSON(w, "HandleAccounts", errors.New(fmt.Sprintf("unknown action type: %s", requestPayload.Action)))
 	}
@@ -243,4 +248,88 @@ func (app *Config) createAccountRequest(w http.ResponseWriter, r *http.Request, 
 	}
 
 	return app.writeJSON(w, "createAccountRequest", response.StatusCode, resp)
+}
+
+func (app *Config) listAccountRequest(w http.ResponseWriter, r *http.Request) error {
+	reqURL := fmt.Sprintf("%s/accounts", accountServiceURL)
+	request, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	if err != nil {
+		return app.errorJSON(w, "listAccountRequest", err, 500)
+	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return app.errorJSON(w, "listAccountRequest", err, response.StatusCode)
+
+	}
+	defer response.Body.Close()
+
+	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
+
+	var jsonResponseBody any
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&jsonResponseBody)
+	if err != nil {
+		return app.errorJSON(w, "listAccountRequest", errors.New("error reading response body"), response.StatusCode)
+	}
+
+	var resp jsonResponse
+	resp.Error = false
+	resp.Data = jsonResponseBody
+
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	return app.writeJSON(w, "listAccountRequest", response.StatusCode, resp)
+}
+
+type AddBalance struct {
+	AccountID string `json:"account_id"`
+	Amount    int32  `json:"amount"`
+}
+
+func (app *Config) addBalanceRequest(w http.ResponseWriter, r *http.Request, payload AddBalance) error {
+	requestBody := AddBalance{
+		AccountID: payload.AccountID,
+		Amount:    payload.Amount,
+	}
+	jsonData, _ := json.Marshal(requestBody)
+
+	reqURL := fmt.Sprintf("%s/accounts/add-balance", accountServiceURL)
+	request, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return app.errorJSON(w, "addBalanceRequest", err, 500)
+	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return app.errorJSON(w, "addBalanceRequest", err, response.StatusCode)
+	}
+	defer response.Body.Close()
+
+	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
+
+	var jsonResponseBody accountResponse
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&jsonResponseBody)
+	if err != nil {
+		return app.errorJSON(w, "createAccountRequest", errors.New("error reading response body"), response.StatusCode)
+	}
+
+	var resp jsonResponse
+	resp.Error = false
+	resp.Data = jsonResponseBody
+
+	if response.StatusCode != http.StatusOK {
+		resp.Message = "fail"
+	} else {
+		resp.Message = "success"
+	}
+
+	return app.writeJSON(w, "addBalanceRequest", response.StatusCode, resp)
 }

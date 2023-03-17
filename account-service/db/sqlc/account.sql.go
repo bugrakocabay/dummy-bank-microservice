@@ -199,17 +199,11 @@ func (q *Queries) GetTransaction(ctx context.Context, transactionID string) (Tra
 const listAccounts = `-- name: ListAccounts :many
 SELECT id, account_id, user_id, balance, currency, created_at, updated_at
 FROM accounts
-ORDER BY id LIMIT $1
-OFFSET $2
+ORDER BY id
 `
 
-type ListAccountsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error) {
-	rows, err := q.db.QueryContext(ctx, listAccounts, arg.Limit, arg.Offset)
+func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
+	rows, err := q.db.QueryContext(ctx, listAccounts)
 	if err != nil {
 		return nil, err
 	}

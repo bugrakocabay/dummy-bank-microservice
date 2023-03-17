@@ -23,6 +23,7 @@ func (app *Config) routes() http.Handler {
 
 	mux.Post("/handle/users/login", app.HandleUsers)
 	mux.Post("/handle/users", app.HandleUsers)
+	mux.Get("/handle/accounts", app.HandleAccounts)
 
 	return mux
 }
@@ -32,6 +33,7 @@ func (app *Config) handleRouter() http.Handler {
 
 	// Accounts-services
 	mux.Post("/accounts", app.HandleAccounts)
+	mux.Post("/accounts/add-balance", app.HandleAccounts)
 	mux.Get("/accounts/{account_id}", app.HandleAccounts)
 	mux.Put("/accounts/update", app.HandleAccounts)
 	mux.Delete("/accounts/delete/{account_id}", app.HandleAccounts)

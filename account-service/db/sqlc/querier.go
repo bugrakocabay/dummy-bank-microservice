@@ -17,7 +17,7 @@ type Querier interface {
 	GetAccountBalance(ctx context.Context, accountID string) (GetAccountBalanceRow, error)
 	GetAccountForUpdate(ctx context.Context, accountID string) (Account, error)
 	GetTransaction(ctx context.Context, transactionID string) (Transaction, error)
-	ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error)
+	ListAccounts(ctx context.Context) ([]Account, error)
 	ListTransactions(ctx context.Context) ([]Transaction, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
 }
