@@ -6,44 +6,38 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 )
 
 type AddBalancePayload struct {
 	Action  string            `json:"action"`
-	Balance CreateAccountData `json:"create"`
+	Balance CreateBalanceData `json:"balance"`
 }
 
-type CreateAccountData struct {
-	Currency string `json:"currency"`
+type CreateBalanceData struct {
+	AccountID string `json:"account_id"`
+	Amount    int32  `json:"amount"`
 }
 
-type CreateAccountResponse struct {
+type AddBalanceResponse struct {
 	Error   bool        `json:"error"`
 	Message string      `json:"message"`
 	Data    AccountData `json:"data"`
 }
 
-type AccountData struct {
-	AccountID string    `json:"account_id"`
-	Balance   int       `json:"balance"`
-	CreatedAt time.Time `json:"created_at"`
-	Currency  string    `json:"currency"`
-	UserID    string    `json:"user_id"`
-}
-
-func CreateAccount(accessToken string) string {
-	requestBody := CreateAccountPayload{
-		Action: "create",
-		Create: CreateAccountData{
-			Currency: "EUR",
+func AddBalance(accessToken, accountID string) error {
+	requestBody := AddBalancePayload{
+		Action: "balance",
+		Balance: CreateBalanceData{
+			AccountID: accountID,
+			Amount:    1000,
 		},
 	}
 
 	jsonData, _ := json.Marshal(requestBody)
-	request, err := http.NewRequest(http.MethodPost, "http://localhost:8080/handle/accounts", bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest(http.MethodPost, "http://localhost:8080/handle/accounts/add-balance", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Fatalf("request err: %v", err)
+		return err
 	}
 
 	token := fmt.Sprintf("Bearer %s", accessToken)
@@ -53,13 +47,15 @@ func CreateAccount(accessToken string) string {
 	response, err := client.Do(request)
 	if err != nil {
 		log.Fatalf("response err: %v", err)
+		return err
 	}
 	defer response.Body.Close()
 
 	var resp CreateAccountResponse
 	if err = json.NewDecoder(response.Body).Decode(&resp); err != nil {
 		log.Fatalf("failed to decode response body: %v", err)
+		return err
 	}
 
-	return resp.Data.AccountID
+	return nil
 }
