@@ -12,7 +12,7 @@ import (
 type createTransactionRequest struct {
 	FromAccountID     string         `json:"from_account_id" binding:"required"`
 	ToAccountID       string         `json:"to_account_id" binding:"required"`
-	TransactionAmount int32          `json:"transaction_amount" binding:"required"`
+	TransactionAmount float64        `json:"transaction_amount" binding:"required"`
 	Description       sql.NullString `json:"description"`
 }
 

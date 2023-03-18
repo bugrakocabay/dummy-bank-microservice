@@ -6,12 +6,23 @@ import (
 )
 
 func main() {
-	for i := 0; i < 100; i++ {
+	// This is to create dummy data, that will fill daily-report service
+	/*for i := 0; i < 10; i++ {
+		id := requests.CreateUser()
+		accessToken := requests.Login(id)
+		myAccountID := requests.CreateAccount(accessToken)
+		err := requests.AddBalance(accessToken, myAccountID)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Created account: %d\n", i+1)
+	}*/
+	for i := 0; i < 20; i++ {
 		id := requests.CreateUser()
 		accessToken := requests.Login(id)
 		accountIDs := requests.GetAllAccounts(accessToken)
-		randomAccountID := accountIDs[requests.RandomInt(0, int64(len(accountIDs)))]
 		myAccountID := requests.CreateAccount(accessToken)
+		randomAccountID := accountIDs[requests.RandomInt(0, int64(len(accountIDs)-1))]
 		err := requests.AddBalance(accessToken, myAccountID)
 		if err != nil {
 			panic(err)
@@ -22,6 +33,6 @@ func main() {
 			panic(err)
 		}
 
-		fmt.Printf("%d done!", i+1)
+		fmt.Printf("%d done!\n", i+1)
 	}
 }

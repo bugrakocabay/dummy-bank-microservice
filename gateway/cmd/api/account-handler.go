@@ -25,7 +25,7 @@ type AccountRequestPayload struct {
 }
 
 type accountResponse struct {
-	Balance   int32     `json:"balance"`
+	Balance   float64   `json:"balance"`
 	Currency  string    `json:"currency"`
 	AccountID string    `json:"account_id"`
 	UserID    string    `json:"user_id"`
@@ -288,8 +288,8 @@ func (app *Config) listAccountRequest(w http.ResponseWriter, r *http.Request) er
 }
 
 type AddBalance struct {
-	AccountID string `json:"account_id"`
-	Amount    int32  `json:"amount"`
+	AccountID string  `json:"account_id"`
+	Amount    float64 `json:"amount"`
 }
 
 func (app *Config) addBalanceRequest(w http.ResponseWriter, r *http.Request, payload AddBalance) error {

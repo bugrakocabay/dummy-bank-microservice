@@ -10,7 +10,7 @@ import (
 )
 
 type accountResponse struct {
-	Balance   int32     `json:"balance"`
+	Balance   float64   `json:"balance"`
 	Currency  string    `json:"currency"`
 	AccountID string    `json:"account_id"`
 	UserID    string    `json:"user_id"`
@@ -57,8 +57,8 @@ func (server *Server) createAccount(ctx *gin.Context) {
 }
 
 type addBalanceRequest struct {
-	AccountID string `json:"account_id"`
-	Amount    int32  `json:"amount"`
+	AccountID string  `json:"account_id"`
+	Amount    float64 `json:"amount"`
 }
 
 func (server *Server) addAccountBalance(ctx *gin.Context) {
@@ -129,8 +129,8 @@ func (server *Server) getAccountBalance(ctx *gin.Context) {
 }
 
 type updateAccountRequest struct {
-	AccountID string `json:"account_id" binding:"required"`
-	Balance   int32  `json:"balance" binding:"required"`
+	AccountID string  `json:"account_id" binding:"required"`
+	Balance   float64 `json:"balance" binding:"required"`
 }
 
 func (server *Server) updateAccount(ctx *gin.Context) {

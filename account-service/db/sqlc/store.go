@@ -49,7 +49,7 @@ type TransferTxParams struct {
 	TransactionID     string         `json:"transaction_id"`
 	FromAccountID     string         `json:"from_account_id"`
 	ToAccountID       string         `json:"to_account_id"`
-	TransactionAmount int32          `json:"transaction_amount"`
+	TransactionAmount float64        `json:"transaction_amount"`
 	Description       sql.NullString `json:"description"`
 }
 
@@ -67,22 +67,25 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
+		commission := float64(arg.TransactionAmount) * 0.03
 		result.Transaction, err = q.CreateTransaction(ctx, CreateTransactionParams{
 			TransactionID:     store.createUUID(),
 			FromAccountID:     arg.FromAccountID,
 			ToAccountID:       arg.ToAccountID,
 			Description:       arg.Description,
 			TransactionAmount: arg.TransactionAmount,
+			Commission:        commission,
 		})
 		if err != nil {
 			log.Println(err)
 			return err
 		}
+		moneyToBeTransferred := arg.TransactionAmount - commission
 
 		if arg.FromAccountID < arg.ToAccountID {
-			result.FromAccount, result.ToAccount, err = AddMoney(ctx, q, arg.FromAccountID, arg.ToAccountID, -arg.TransactionAmount, arg.TransactionAmount)
+			result.FromAccount, result.ToAccount, err = AddMoney(ctx, q, arg.FromAccountID, arg.ToAccountID, -arg.TransactionAmount, moneyToBeTransferred)
 		} else {
-			result.ToAccount, result.FromAccount, err = AddMoney(ctx, q, arg.ToAccountID, arg.FromAccountID, arg.TransactionAmount, -arg.TransactionAmount)
+			result.ToAccount, result.FromAccount, err = AddMoney(ctx, q, arg.ToAccountID, arg.FromAccountID, moneyToBeTransferred, -arg.TransactionAmount)
 		}
 		return nil
 	})
@@ -112,7 +115,7 @@ func AddMoney(
 	accountID1,
 	accountID2 string,
 	amount1,
-	amount2 int32,
+	amount2 float64,
 ) (account1, account2 Account, err error) {
 	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 		AccountID: accountID1,

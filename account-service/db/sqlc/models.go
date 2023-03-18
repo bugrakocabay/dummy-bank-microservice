@@ -13,7 +13,7 @@ type Account struct {
 	ID        int64     `json:"id"`
 	AccountID string    `json:"account_id"`
 	UserID    string    `json:"user_id"`
-	Balance   int32     `json:"balance"`
+	Balance   float64   `json:"balance"`
 	Currency  string    `json:"currency"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -24,7 +24,8 @@ type Transaction struct {
 	TransactionID     string         `json:"transaction_id"`
 	FromAccountID     string         `json:"from_account_id"`
 	ToAccountID       string         `json:"to_account_id"`
-	TransactionAmount int32          `json:"transaction_amount"`
+	TransactionAmount float64        `json:"transaction_amount"`
+	Commission        float64        `json:"commission"`
 	Description       sql.NullString `json:"description"`
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`

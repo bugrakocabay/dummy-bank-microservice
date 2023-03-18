@@ -45,7 +45,7 @@ func (app *Config) HandleTransactions(w http.ResponseWriter, r *http.Request) {
 type CreateTransactionPayload struct {
 	FromAccountID     string         `json:"from_account_id" binding:"required"`
 	ToAccountID       string         `json:"to_account_id" binding:"required"`
-	TransactionAmount int32          `json:"transaction_amount" binding:"required"`
+	TransactionAmount float64        `json:"transaction_amount" binding:"required"`
 	Description       sql.NullString `json:"description"`
 }
 

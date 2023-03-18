@@ -38,8 +38,8 @@ FROM accounts
 WHERE account_id = $1 LIMIT 1;
 
 -- name: CreateTransaction :one
-INSERT INTO transactions (transaction_id, from_account_id, to_account_id, transaction_amount, description)
-VALUES ($1, $2, $3, $4, $5) RETURNING *;
+INSERT INTO transactions (transaction_id, from_account_id, to_account_id, transaction_amount, commission, description)
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
 
 -- name: GetTransaction :one
 SELECT *

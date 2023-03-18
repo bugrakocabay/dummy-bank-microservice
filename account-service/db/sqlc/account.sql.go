@@ -17,8 +17,8 @@ WHERE account_id = $2 RETURNING id, account_id, user_id, balance, currency, crea
 `
 
 type AddAccountBalanceParams struct {
-	Amount    int32  `json:"amount"`
-	AccountID string `json:"account_id"`
+	Amount    float64 `json:"amount"`
+	AccountID string  `json:"account_id"`
 }
 
 func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (Account, error) {
@@ -42,10 +42,10 @@ VALUES ($1, $2, $3, $4) RETURNING id, account_id, user_id, balance, currency, cr
 `
 
 type CreateAccountParams struct {
-	AccountID string `json:"account_id"`
-	UserID    string `json:"user_id"`
-	Balance   int32  `json:"balance"`
-	Currency  string `json:"currency"`
+	AccountID string  `json:"account_id"`
+	UserID    string  `json:"user_id"`
+	Balance   float64 `json:"balance"`
+	Currency  string  `json:"currency"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
@@ -69,15 +69,16 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 }
 
 const createTransaction = `-- name: CreateTransaction :one
-INSERT INTO transactions (transaction_id, from_account_id, to_account_id, transaction_amount, description)
-VALUES ($1, $2, $3, $4, $5) RETURNING id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
+INSERT INTO transactions (transaction_id, from_account_id, to_account_id, transaction_amount, commission, description)
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, transaction_id, from_account_id, to_account_id, transaction_amount, commission, description, created_at, updated_at
 `
 
 type CreateTransactionParams struct {
 	TransactionID     string         `json:"transaction_id"`
 	FromAccountID     string         `json:"from_account_id"`
 	ToAccountID       string         `json:"to_account_id"`
-	TransactionAmount int32          `json:"transaction_amount"`
+	TransactionAmount float64        `json:"transaction_amount"`
+	Commission        float64        `json:"commission"`
 	Description       sql.NullString `json:"description"`
 }
 
@@ -87,6 +88,7 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 		arg.FromAccountID,
 		arg.ToAccountID,
 		arg.TransactionAmount,
+		arg.Commission,
 		arg.Description,
 	)
 	var i Transaction
@@ -96,6 +98,7 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 		&i.FromAccountID,
 		&i.ToAccountID,
 		&i.TransactionAmount,
+		&i.Commission,
 		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -141,8 +144,8 @@ WHERE account_id = $1 LIMIT 1
 `
 
 type GetAccountBalanceRow struct {
-	AccountID string `json:"account_id"`
-	Balance   int32  `json:"balance"`
+	AccountID string  `json:"account_id"`
+	Balance   float64 `json:"balance"`
 }
 
 func (q *Queries) GetAccountBalance(ctx context.Context, accountID string) (GetAccountBalanceRow, error) {
@@ -175,7 +178,7 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, accountID string) (Ac
 }
 
 const getTransaction = `-- name: GetTransaction :one
-SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
+SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, commission, description, created_at, updated_at
 FROM transactions
 WHERE transaction_id = $1 LIMIT 1
 `
@@ -189,6 +192,7 @@ func (q *Queries) GetTransaction(ctx context.Context, transactionID string) (Tra
 		&i.FromAccountID,
 		&i.ToAccountID,
 		&i.TransactionAmount,
+		&i.Commission,
 		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -234,7 +238,7 @@ func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
 }
 
 const listTransactions = `-- name: ListTransactions :many
-SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, description, created_at, updated_at
+SELECT id, transaction_id, from_account_id, to_account_id, transaction_amount, commission, description, created_at, updated_at
 FROM transactions
 `
 
@@ -253,6 +257,7 @@ func (q *Queries) ListTransactions(ctx context.Context) ([]Transaction, error) {
 			&i.FromAccountID,
 			&i.ToAccountID,
 			&i.TransactionAmount,
+			&i.Commission,
 			&i.Description,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -277,8 +282,8 @@ WHERE account_id = $1 RETURNING id, account_id, user_id, balance, currency, crea
 `
 
 type UpdateAccountParams struct {
-	AccountID string `json:"account_id"`
-	Balance   int32  `json:"balance"`
+	AccountID string  `json:"account_id"`
+	Balance   float64 `json:"balance"`
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
