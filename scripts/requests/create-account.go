@@ -26,7 +26,7 @@ type CreateAccountResponse struct {
 
 type AccountData struct {
 	AccountID string    `json:"account_id"`
-	Balance   int       `json:"balance"`
+	Balance   float64   `json:"balance"`
 	CreatedAt time.Time `json:"created_at"`
 	Currency  string    `json:"currency"`
 	UserID    string    `json:"user_id"`

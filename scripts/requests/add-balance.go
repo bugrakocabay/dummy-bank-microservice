@@ -14,8 +14,8 @@ type AddBalancePayload struct {
 }
 
 type CreateBalanceData struct {
-	AccountID string `json:"account_id"`
-	Amount    int32  `json:"amount"`
+	AccountID string  `json:"account_id"`
+	Amount    float64 `json:"amount"`
 }
 
 type AddBalanceResponse struct {

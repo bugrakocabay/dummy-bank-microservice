@@ -17,7 +17,7 @@ func main() {
 		}
 		fmt.Printf("Created account: %d\n", i+1)
 	}*/
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 100; i++ {
 		id := requests.CreateUser()
 		accessToken := requests.Login(id)
 		accountIDs := requests.GetAllAccounts(accessToken)

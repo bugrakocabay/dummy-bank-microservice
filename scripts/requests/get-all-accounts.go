@@ -21,7 +21,7 @@ type GetAllAccountsResponse struct {
 
 type GetAllAccountsData struct {
 	AccountID string    `json:"account_id"`
-	Balance   int       `json:"balance"`
+	Balance   float64   `json:"balance"`
 	CreatedAt time.Time `json:"created_at"`
 	Currency  string    `json:"currency"`
 	ID        int       `json:"id"`
