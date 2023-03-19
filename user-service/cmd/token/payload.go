@@ -13,17 +13,19 @@ var ErrExpiredToken = errors.New("token has expired")
 type Payload struct {
 	ID        string    `json:"id"`
 	UserID    string    `json:"user_id"`
+	Email     string    `json:"email"`
 	IssuedAt  time.Time `json:"issued_at"`
 	ExpiredAt time.Time `json:"expired_at"`
 }
 
 // NewPayload creates a token payload with specific user id and duration
-func NewPayload(userID string, duration time.Duration) *Payload {
+func NewPayload(userID string, email string, duration time.Duration) *Payload {
 	tokenID := createUUID()
 
 	payload := &Payload{
 		ID:        tokenID,
 		UserID:    userID,
+		Email:     email,
 		IssuedAt:  time.Now(),
 		ExpiredAt: time.Now().Add(duration),
 	}

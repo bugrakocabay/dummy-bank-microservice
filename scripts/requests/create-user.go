@@ -3,6 +3,7 @@ package requests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -18,6 +19,7 @@ type CreateUserPayload struct {
 type CreateUserData struct {
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
+	Email     string `json:"email"`
 	Password  string `json:"password"`
 }
 
@@ -31,15 +33,18 @@ type UserData struct {
 	CreatedAt string `json:"created_at"`
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
+	Email     string `json:"email"`
 	UserID    string `json:"user_id"`
 }
 
 func CreateUser() string {
+	randomMail := fmt.Sprintf("%s%d@mail.com", RandomString(int(RandomInt(3, 7))), RandomInt(100, 1000))
 	requestBody := CreateUserPayload{
 		Action: "create",
 		Create: CreateUserData{
 			Firstname: RandomString(5),
 			Lastname:  RandomString(6),
+			Email:     randomMail,
 			Password:  "qwerty",
 		},
 	}
@@ -62,7 +67,7 @@ func CreateUser() string {
 		log.Fatalf("failed to decode response body: %v", err)
 	}
 
-	return resp.Data.UserID
+	return resp.Data.Email
 }
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz"

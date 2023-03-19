@@ -11,6 +11,7 @@ import (
 
 type Querier interface {
 	GetDailyTransactionReport(ctx context.Context, createdAt time.Time) (GetDailyTransactionReportRow, error)
+	SaveDailyTransactionReport(ctx context.Context, arg SaveDailyTransactionReportParams) error
 }
 
 var _ Querier = (*Queries)(nil)

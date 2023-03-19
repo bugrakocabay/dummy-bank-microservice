@@ -15,11 +15,11 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Created account: %d\n", i+1)
+		fmt.Printf("Created user: %d\n", i+1)
 	}*/
 	for i := 0; i < 100; i++ {
-		id := requests.CreateUser()
-		accessToken := requests.Login(id)
+		email := requests.CreateUser()
+		accessToken := requests.Login(email)
 		accountIDs := requests.GetAllAccounts(accessToken)
 		myAccountID := requests.CreateAccount(accessToken)
 		randomAccountID := accountIDs[requests.RandomInt(0, int64(len(accountIDs)-1))]

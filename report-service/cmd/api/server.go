@@ -3,6 +3,7 @@ package main
 import (
 	db "github.com/bugrakocabay/dummy-bank-microservice/report-service/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 )
 
 type Server struct {
@@ -17,6 +18,15 @@ func NewServer(store db.Store) *Server {
 	router := gin.Default()
 
 	router.GET("/reports/daily-report", server.getDailyReport)
+
+	c := cron.New()
+	defer c.Stop()
+
+	ctx := gin.Context{}
+	c.AddFunc("*/10 * * * * *", func() {
+		server.getDailyReport(&ctx)
+	})
+	c.Start()
 
 	server.router = router
 	return server

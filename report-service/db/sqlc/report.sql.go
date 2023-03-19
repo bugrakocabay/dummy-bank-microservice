@@ -14,7 +14,8 @@ const getDailyTransactionReport = `-- name: GetDailyTransactionReport :one
 SELECT COUNT(*) AS num_transactions,
        AVG(transaction_amount) AS avg_transaction_amount,
        SUM(transaction_amount) AS total_transaction_amount,
-       SUM(commission) AS total_commission, created_at::date AS day
+       SUM(commission) AS total_commission,
+       created_at::date AS day
 FROM transactions
 WHERE created_at::date = $1
 GROUP BY day
@@ -39,4 +40,28 @@ func (q *Queries) GetDailyTransactionReport(ctx context.Context, createdAt time.
 		&i.Day,
 	)
 	return i, err
+}
+
+const saveDailyTransactionReport = `-- name: SaveDailyTransactionReport :exec
+INSERT INTO daily_transaction_report (num_transactions, avg_transaction_amount, total_transaction_amount, total_commission, day)
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type SaveDailyTransactionReportParams struct {
+	NumTransactions        int32   `json:"num_transactions"`
+	AvgTransactionAmount   float64 `json:"avg_transaction_amount"`
+	TotalTransactionAmount int32   `json:"total_transaction_amount"`
+	TotalCommission        float64 `json:"total_commission"`
+	Day                    string  `json:"day"`
+}
+
+func (q *Queries) SaveDailyTransactionReport(ctx context.Context, arg SaveDailyTransactionReportParams) error {
+	_, err := q.db.ExecContext(ctx, saveDailyTransactionReport,
+		arg.NumTransactions,
+		arg.AvgTransactionAmount,
+		arg.TotalTransactionAmount,
+		arg.TotalCommission,
+		arg.Day,
+	)
+	return err
 }

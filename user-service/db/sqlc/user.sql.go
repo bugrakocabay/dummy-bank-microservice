@@ -10,8 +10,8 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (user_id, firstname, lastname, password)
-VALUES ($1, $2, $3, $4) RETURNING id, user_id, firstname, lastname, password, created_at, updated_at
+INSERT INTO users (user_id, firstname, lastname, password, email)
+VALUES ($1, $2, $3, $4, $5) RETURNING id, user_id, firstname, lastname, password, email, created_at, updated_at
 `
 
 type CreateUserParams struct {
@@ -19,6 +19,7 @@ type CreateUserParams struct {
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
 	Password  string `json:"password"`
+	Email     string `json:"email"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -27,6 +28,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Firstname,
 		arg.Lastname,
 		arg.Password,
+		arg.Email,
 	)
 	var i User
 	err := row.Scan(
@@ -35,6 +37,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Firstname,
 		&i.Lastname,
 		&i.Password,
+		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -42,7 +45,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, user_id, firstname, lastname, password, created_at, updated_at
+SELECT id, user_id, firstname, lastname, password, email, created_at, updated_at
 FROM users
 WHERE user_id = $1 LIMIT 1
 `
@@ -56,6 +59,29 @@ func (q *Queries) GetUser(ctx context.Context, userID string) (User, error) {
 		&i.Firstname,
 		&i.Lastname,
 		&i.Password,
+		&i.Email,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, user_id, firstname, lastname, password, email, created_at, updated_at
+FROM users
+WHERE email = $1 LIMIT 1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Firstname,
+		&i.Lastname,
+		&i.Password,
+		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

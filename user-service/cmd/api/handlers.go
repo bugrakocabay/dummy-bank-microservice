@@ -17,12 +17,14 @@ type createUserRequest struct {
 	Firstname string `json:"firstname" binding:"required"`
 	Lastname  string `json:"lastname" binding:"required"`
 	Password  string `json:"password" binding:"required"`
+	Email     string `json:"email" binding:"required"`
 }
 
 type userResponse struct {
 	Firstname string    `json:"firstname"`
 	Lastname  string    `json:"lastname"`
 	UserID    string    `json:"user_id"`
+	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -32,6 +34,7 @@ func newUserResponse(account db.User) userResponse {
 		Lastname:  account.Lastname,
 		UserID:    account.UserID,
 		CreatedAt: account.CreatedAt,
+		Email:     account.Email,
 	}
 }
 
@@ -52,6 +55,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		UserID:    server.createUUID(),
 		Firstname: req.Firstname,
 		Lastname:  req.Lastname,
+		Email:     req.Email,
 		Password:  hashedPassword,
 	}
 
@@ -91,7 +95,7 @@ func (server *Server) getUser(ctx *gin.Context) {
 }
 
 type loginUserRequest struct {
-	UserID   string `json:"user_id" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -107,7 +111,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	user, err := server.store.GetUser(ctx, req.UserID)
+	user, err := server.store.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -123,7 +127,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := server.tokenMaker.CreateToken(user.UserID, time.Hour)
+	accessToken, err := server.tokenMaker.CreateToken(user.UserID, user.Email, time.Hour)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

@@ -9,6 +9,17 @@ import (
 	"time"
 )
 
+type DailyTransactionReport struct {
+	ID                     int64     `json:"id"`
+	NumTransactions        int32     `json:"num_transactions"`
+	AvgTransactionAmount   float64   `json:"avg_transaction_amount"`
+	TotalTransactionAmount int32     `json:"total_transaction_amount"`
+	TotalCommission        float64   `json:"total_commission"`
+	Day                    string    `json:"day"`
+	CreatedAt              time.Time `json:"created_at"`
+	UpdatedAt              time.Time `json:"updated_at"`
+}
+
 type Transaction struct {
 	ID                int64          `json:"id"`
 	TransactionID     string         `json:"transaction_id"`

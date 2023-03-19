@@ -47,7 +47,7 @@ func (app *Config) HandleUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 type LoginUserPayload struct {
-	UserID   string `json:"user_id" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -92,6 +92,7 @@ func (app *Config) loginUserRequest(w http.ResponseWriter, payload LoginUserPayl
 type CreateUserPayload struct {
 	Firstname string `json:"firstname" binding:"required"`
 	Lastname  string `json:"lastname" binding:"required"`
+	Email     string `json:"email" binding:"required"`
 	Password  string `json:"password" binding:"required"`
 }
 
@@ -113,7 +114,7 @@ func (app *Config) createUserRequest(w http.ResponseWriter, payload CreateUserPa
 
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
-	var jsonResponseBody any
+	var jsonResponseBody any // TODO change any to proper struct
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {
@@ -154,7 +155,7 @@ func (app *Config) getUserRequest(w http.ResponseWriter, r *http.Request) error 
 
 	response.Body = http.MaxBytesReader(w, response.Body, int64(maxBytes))
 
-	var jsonResponseBody any
+	var jsonResponseBody any // TODO change any to proper struct
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&jsonResponseBody)
 	if err != nil {

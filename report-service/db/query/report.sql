@@ -7,3 +7,7 @@ SELECT COUNT(*) AS num_transactions,
 FROM transactions
 WHERE created_at::date = $1
 GROUP BY day;
+
+-- name: SaveDailyTransactionReport :exec
+INSERT INTO daily_transaction_report (num_transactions, avg_transaction_amount, total_transaction_amount, total_commission, day)
+VALUES ($1, $2, $3, $4, $5);

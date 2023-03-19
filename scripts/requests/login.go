@@ -13,7 +13,7 @@ type LoginPayload struct {
 }
 
 type LoginData struct {
-	UserID   string `json:"user_id"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -28,11 +28,11 @@ type LoginResponseData struct {
 	UserData    UserData `json:"user"`
 }
 
-func Login(userID string) string {
+func Login(email string) string {
 	requestBody := LoginPayload{
 		Action: "login",
 		Login: LoginData{
-			UserID:   userID,
+			Email:    email,
 			Password: "qwerty",
 		},
 	}
