@@ -65,7 +65,7 @@ func (app *Config) writeJSON(w http.ResponseWriter, name string, status int, dat
 func (app *Config) errorJSON(w http.ResponseWriter, name string, err error, status ...int) error {
 	logPayload := Log{
 		StatusCode: status[0],
-		Message:    err,
+		Message:    fmt.Sprintf("%v", err),
 	}
 	defer app.sendErrorLog(name, logPayload)
 
@@ -85,7 +85,7 @@ func (app *Config) errorJSON(w http.ResponseWriter, name string, err error, stat
 
 type JSONPayload struct {
 	Name string `json:"name"`
-	Data any    `json:"data"`
+	Data Log    `json:"data"`
 }
 
 type Log struct {

@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 
 	db "github.com/bugrakocabay/dummy-bank-microservice/account-service/db/sqlc"
@@ -30,6 +31,10 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-createTransfer", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -44,6 +49,10 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-createTransfer", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -57,6 +66,10 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 	}
 	transaction, err := server.store.TransferTx(ctx, payload)
 	if err != nil {
+		server.sendErrorLog("account-createTransfer", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -82,6 +95,10 @@ func (server *Server) getTransaction(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-getTransaction", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -92,6 +109,10 @@ func (server *Server) getTransaction(ctx *gin.Context) {
 func (server *Server) listTransactions(ctx *gin.Context) {
 	transactions, err := server.store.ListTransactions(ctx)
 	if err != nil {
+		server.sendErrorLog("account-listTransactions", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

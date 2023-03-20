@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -48,6 +49,10 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	account, err := server.store.CreateAccount(ctx, payload)
 	if err != nil {
+		server.sendErrorLog("account-createAccount", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -75,6 +80,10 @@ func (server *Server) addAccountBalance(ctx *gin.Context) {
 
 	account, err := server.store.AddAccountBalance(ctx, payload)
 	if err != nil {
+		server.sendErrorLog("account-addAccountBalance", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -100,6 +109,10 @@ func (server *Server) getAccount(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-getAccount", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -121,6 +134,10 @@ func (server *Server) getAccountBalance(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-getAccountBalance", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -151,6 +168,10 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-updateAccount", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -176,6 +197,10 @@ func (server *Server) deleteAccount(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-deleteAccount", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -190,6 +215,10 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("account-listAccounts", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

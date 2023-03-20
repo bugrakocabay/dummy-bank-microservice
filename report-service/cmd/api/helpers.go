@@ -105,6 +105,6 @@ func (server *Server) sendErrorLog(name string, payload Log) {
 		return
 	}
 
-	log.Println("logged successfully")
+	log.Println("error logged successfully")
 	return
 }

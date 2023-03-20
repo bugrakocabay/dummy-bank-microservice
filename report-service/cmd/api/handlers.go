@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -15,7 +16,7 @@ func (server *Server) getDailyReport(ctx *gin.Context) {
 	if err != nil {
 		server.sendErrorLog("getDailyReport", Log{
 			StatusCode: 500,
-			Message:    err,
+			Message:    fmt.Sprintf("error fetching transactions: %v", err),
 		})
 		return
 	}
@@ -32,7 +33,7 @@ func (server *Server) getDailyReport(ctx *gin.Context) {
 	if err != nil {
 		server.sendErrorLog("getDailyReport", Log{
 			StatusCode: 500,
-			Message:    err,
+			Message:    fmt.Sprintf("error saving transactions: %v", err),
 		})
 		return
 	}

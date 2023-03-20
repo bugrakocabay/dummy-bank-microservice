@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -17,7 +16,7 @@ type createUserRequest struct {
 	Firstname string `json:"firstname" binding:"required"`
 	Lastname  string `json:"lastname" binding:"required"`
 	Password  string `json:"password" binding:"required"`
-	Email     string `json:"email" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
 }
 
 type userResponse struct {
@@ -47,6 +46,10 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	hashedPassword, err := HashPassword(req.Password)
 	if err != nil {
+		server.sendErrorLog("user-createUser", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -61,6 +64,10 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	user, err := server.store.CreateUser(ctx, payload)
 	if err != nil {
+		server.sendErrorLog("user-createUser", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -86,6 +93,10 @@ func (server *Server) getUser(ctx *gin.Context) {
 			ctx.JSON(http.StatusBadRequest, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("user-getUser", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -117,6 +128,10 @@ func (server *Server) loginUser(ctx *gin.Context) {
 			ctx.JSON(http.StatusBadRequest, errorResponse(err))
 			return
 		}
+		server.sendErrorLog("user-getUser", Log{
+			StatusCode: 500,
+			Message:    fmt.Sprintf("%v", err),
+		})
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
@@ -152,7 +167,6 @@ const (
 
 func (server *Server) authenticateUser(ctx *gin.Context) {
 	authorizationHeader := ctx.GetHeader(authorizationHeaderKey)
-	log.Println(authorizationHeader)
 	if len(authorizationHeader) == 0 {
 		err := errors.New("authorization header is not provided")
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err))

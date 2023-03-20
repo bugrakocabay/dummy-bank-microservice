@@ -172,10 +172,6 @@ func (app *Config) updateAccountRequest(w http.ResponseWriter, r *http.Request, 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		app.sendErrorLog("updateAccountRequest", Log{
-			StatusCode: response.StatusCode,
-			Message:    err.Error(),
-		})
 		return app.errorJSON(w, "updateAccountRequest", err, response.StatusCode)
 	}
 	defer response.Body.Close()
