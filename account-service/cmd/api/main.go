@@ -3,9 +3,10 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
+
 	db "github.com/bugrakocabay/dummy-bank-microservice/account-service/db/sqlc"
 	_ "github.com/lib/pq"
-	"log"
 )
 
 const webPort = "80"
