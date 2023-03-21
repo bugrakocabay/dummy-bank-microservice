@@ -15,7 +15,6 @@ type Querier interface {
 	DeleteAccount(ctx context.Context, accountID string) error
 	GetAccount(ctx context.Context, accountID string) (Account, error)
 	GetAccountBalance(ctx context.Context, accountID string) (GetAccountBalanceRow, error)
-	GetAccountForUpdate(ctx context.Context, accountID string) (Account, error)
 	GetTransaction(ctx context.Context, transactionID string) (Transaction, error)
 	ListAccounts(ctx context.Context) ([]Account, error)
 	ListTransactions(ctx context.Context) ([]Transaction, error)
