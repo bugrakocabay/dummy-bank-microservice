@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
@@ -23,5 +24,21 @@ func TestMain(m *testing.M) {
 	}
 
 	testQueries = New(conn)
+	cleanDB(testQueries)
+
 	os.Exit(m.Run())
+}
+
+func cleanDB(queries *Queries) {
+	query1 := "DELETE FROM accounts;"
+	_, err := queries.db.QueryContext(context.Background(), query1)
+	if err != nil {
+		log.Printf("error cleaning accounts table: %v", err)
+	}
+
+	query2 := "DELETE FROM transactions;"
+	_, err = queries.db.QueryContext(context.Background(), query2)
+	if err != nil {
+		log.Printf("error cleaning transactions table: %v", err)
+	}
 }
