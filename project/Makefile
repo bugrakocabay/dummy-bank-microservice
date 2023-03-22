@@ -73,3 +73,7 @@ build_report_service:
 ## sqlc: generates sql code from template
 sqlc:
 	sqlc generate
+
+## mock: generates mock code for account database
+mock:
+	mockgen -destination db/mock/store.go -package mockdb github.com/bugrakocabay/dummy-bank-microservice/account-service/db/sqlc Store

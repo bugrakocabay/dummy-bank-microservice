@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strings"
+	"time"
 )
 
 func (server *Server) createUUID() string {
@@ -62,4 +64,22 @@ func (server *Server) sendErrorLog(name string, payload Log) {
 
 	log.Println("logged successfully")
 	return
+}
+
+const alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+func RandomString(n int) string {
+	var sb strings.Builder
+	k := len(alphabet)
+
+	for i := 0; i < n; i++ {
+		c := alphabet[rand.Intn(k)]
+		sb.WriteByte(c)
+	}
+
+	return sb.String()
 }
