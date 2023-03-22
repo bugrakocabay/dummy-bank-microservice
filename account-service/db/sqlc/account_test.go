@@ -132,6 +132,10 @@ func TestAddAccountBalance(t *testing.T) {
 	require.NotEmpty(t, account2)
 
 	require.Equal(t, account2.Balance, account1.Balance+arg.Amount)
+	require.Equal(t, account1.AccountID, account2.AccountID)
+	require.Equal(t, account1.UserID, account2.UserID)
+	require.Equal(t, account1.Currency, account2.Currency)
+	require.WithinDuration(t, account1.CreatedAt, account2.CreatedAt, time.Second)
 }
 
 func TestGetAccountBalance(t *testing.T) {
