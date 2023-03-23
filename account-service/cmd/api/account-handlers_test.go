@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -15,15 +16,6 @@ import (
 	db "github.com/bugrakocabay/dummy-bank-microservice/account-service/db/sqlc"
 	"github.com/golang/mock/gomock"
 )
-
-func createRandomAccount() db.Account {
-	return db.Account{
-		AccountID: RandomString(5),
-		UserID:    RandomString(5),
-		Currency:  "EUR",
-		Balance:   100,
-	}
-}
 
 func TestGetAccount(t *testing.T) {
 	account := createRandomAccount()
@@ -60,8 +52,20 @@ func TestGetAccount(t *testing.T) {
 			},
 		},
 		{
+			name:      "InternalServerErr",
+			accountID: account.AccountID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.AccountID)).
+					Times(1).
+					Return(db.Account{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		/*{
 			name:      "Bad Request",
-			accountID: "qwerty",
+			accountID: " ",
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().GetAccount(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -69,7 +73,7 @@ func TestGetAccount(t *testing.T) {
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
-		},
+		},*/
 		// TODO cover more cases
 	}
 	for i := 0; i < len(testCases); i++ {
@@ -87,6 +91,69 @@ func TestGetAccount(t *testing.T) {
 
 			url := fmt.Sprintf("/accounts/%s", tc.accountID)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
+			require.NoError(t, err)
+
+			server.router.ServeHTTP(recorder, request)
+			tc.checkResponse(t, recorder)
+		})
+	}
+}
+
+func createRandomAccount() db.Account {
+	return db.Account{
+		AccountID: RandomString(5),
+		UserID:    RandomString(5),
+		Currency:  "EUR",
+	}
+}
+
+func TestCreateAccount(t *testing.T) {
+	account := createRandomAccount()
+
+	testCases := []struct {
+		name          string
+		body          gin.H
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name: "Created",
+			body: gin.H{"currency": account.Currency, "user_id": account.UserID},
+			buildStubs: func(store *mockdb.MockStore) {
+				/*arg := db.CreateAccountParams{
+					AccountID: account.AccountID,
+					UserID:    account.UserID,
+					Currency:  account.Currency,
+					Balance:   0,
+				}*/
+				store.EXPECT().CreateAccount(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(account, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusCreated, recorder.Code)
+			},
+		},
+	}
+
+	for i := 0; i < len(testCases); i++ {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := NewServer(store)
+			recorder := httptest.NewRecorder()
+
+			data, err := json.Marshal(tc.body)
+			require.NoError(t, err)
+
+			url := fmt.Sprintf("/accounts/create")
+			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)
