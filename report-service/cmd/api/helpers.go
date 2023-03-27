@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"net/http"
+	"sync"
+	"time"
 )
 
 type jsonResponse struct {
@@ -107,4 +110,33 @@ func (server *Server) sendErrorLog(name string, payload Log) {
 
 	log.Println("error logged successfully")
 	return
+}
+
+// runDailyCron runs a cron that runs every day at 00:00
+func (server *Server) runDailyCron(ctx *gin.Context) {
+	var lock sync.Mutex
+	now := time.Now()
+	next := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+	timer := time.NewTimer(next.Sub(now))
+	defer timer.Stop()
+	for {
+		/* run forever */
+		select {
+		case <-timer.C:
+			go func() {
+				lock.Lock()
+				defer lock.Unlock()
+				_, err := http.Get("http://report-service/reports/daily-report")
+				if err != nil {
+					log.Println("error daily report request: ", err)
+				}
+
+				log.Println("ran daily cron: ", now)
+			}()
+			// reset timer for the next day
+			now = time.Now()
+			next = time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+			timer.Reset(next.Sub(now))
+		}
+	}
 }

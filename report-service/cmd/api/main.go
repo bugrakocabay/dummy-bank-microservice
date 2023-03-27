@@ -3,16 +3,15 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
-
 	db "github.com/bugrakocabay/dummy-bank-microservice/report-service/db/sqlc"
 	_ "github.com/lib/pq"
+	"log"
 )
 
 const webPort = "80"
 
 func main() {
-	log.Printf("Starting Account service on port: %s", webPort)
+	log.Printf("Starting Report service on port: %s", webPort)
 
 	config, err := LoadConfig()
 	if err != nil {

@@ -86,7 +86,7 @@ func TestGetAccount(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/accounts/%s", tc.accountID)
@@ -120,18 +120,19 @@ func TestCreateAccount(t *testing.T) {
 			name: "Created",
 			body: gin.H{"currency": account.Currency, "user_id": account.UserID},
 			buildStubs: func(store *mockdb.MockStore) {
-				/*arg := db.CreateAccountParams{
+				arg := db.CreateAccountParams{
 					AccountID: account.AccountID,
 					UserID:    account.UserID,
 					Currency:  account.Currency,
 					Balance:   0,
-				}*/
-				store.EXPECT().CreateAccount(gomock.Any(), gomock.Any()).
+				}
+				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
 					Return(account, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusCreated, recorder.Code)
+				requireBodyMatchAccount(t, recorder.Body, account)
 			},
 		},
 	}
