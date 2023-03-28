@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bugrakocabay/dummy-bank-microservice/amqp-service/event"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
 	"math"
@@ -10,18 +11,27 @@ import (
 
 func main() {
 	// connect to rabbitmq
-	rabbitconn, err := connect()
+	rabbitConn, err := connect()
 	if err != nil {
 		log.Println("rabbitconn err: ", err)
 		os.Exit(1)
 	}
-	defer rabbitconn.Close()
+	defer rabbitConn.Close()
 
 	// start listening for messages
+	log.Println("listening for and consuming RabbitMQ messages...")
 
 	// create consumer
+	consumer, err := event.NewConsumer(rabbitConn)
+	if err != nil {
+		panic(err)
+	}
 
 	// watch the queue and consume events
+	err = consumer.Listen([]string{"log.INFO", "log.WARNING", "log.ERROR"})
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func connect() (*amqp.Connection, error) {
@@ -35,6 +45,7 @@ func connect() (*amqp.Connection, error) {
 			log.Println("amqp not ready yet...")
 			counts++
 		} else {
+			log.Println("connected to rabbitmq!")
 			connection = c
 			break
 		}
