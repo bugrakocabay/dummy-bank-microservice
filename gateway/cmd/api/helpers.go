@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bugrakocabay/dummy-bank-microservice/gateway/cmd/event"
 	"io"
 	"io/ioutil"
 	"log"
@@ -175,4 +176,24 @@ func getAccountUserID(accountID string) (string, error) {
 
 	// Return the user ID
 	return account.UserID, nil
+}
+
+func (app *Config) pushToQueue(name string, payload Log) error {
+	emitter, err := event.NewEventEmitter(app.rabbit)
+	if err != nil {
+		return err
+	}
+
+	arg := JSONPayload{
+		Name: name,
+		Data: payload,
+	}
+	jsonData, _ := json.Marshal(&arg)
+
+	err = emitter.Push(string(jsonData), "log.ERROR")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

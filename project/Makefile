@@ -3,6 +3,7 @@ ACCOUNT_SERVICE_BINARY=accountServiceApp
 LOGGER_SERVICE_BINARY=loggerServiceApp
 USER_SERVICE_BINARY=userServiceApp
 REPORT_SERVICE_BINARY=reportServiceApp
+AMQP_SERVICE_BINARY=amqpServiceApp
 
 ## up: starts all containers in the background without forcing build
 up:
@@ -11,7 +12,7 @@ up:
 	@echo "Docker images started!"
 
 ## up_build: stops docker-compose (if running), builds all projects and starts docker compose
-up_build: build_gateway build_account_service build_logger_service build_user_service build_report_service
+up_build: build_gateway build_account_service build_logger_service build_user_service build_report_service build_amqp_service
 	@echo "Stopping docker images (if running...)"
 	docker-compose down
 	@echo "Building (when required) and starting docker images..."
@@ -68,6 +69,12 @@ build_user_service:
 build_report_service:
 	@echo "Building report-service binary..."
 	cd ../report-service && env GOOS=linux CGO_ENABLED=0 go build -o ${REPORT_SERVICE_BINARY} ./cmd/api
+	@echo "Done!"
+
+## build_amqp-service: builds the amqp-service binary as a linux executable
+build_amqp_service:
+	@echo "Building amqp-service binary..."
+	cd ../amqp-service && env GOOS=linux CGO_ENABLED=0 go build -o ${AMQP_SERVICE_BINARY} ./
 	@echo "Done!"
 
 ## sqlc: generates sql code from template

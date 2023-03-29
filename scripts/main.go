@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/dummy-bank-scripts/requests"
+	"sync"
 )
 
 func main() {
@@ -17,7 +18,8 @@ func main() {
 		}
 		fmt.Printf("Created user: %d\n", i+1)
 	}*/
-	for i := 0; i < 100; i++ {
+	createUserWithTransaction := func(wg *sync.WaitGroup, id int) {
+		defer wg.Done()
 		email := requests.CreateUser()
 		accessToken := requests.Login(email)
 		accountIDs := requests.GetAllAccounts(accessToken)
@@ -33,6 +35,14 @@ func main() {
 			panic(err)
 		}
 
-		fmt.Printf("%d done!\n", i+1)
+		fmt.Printf("%d done!\n", id+1)
 	}
+
+	var wg sync.WaitGroup
+	const numberOfTransactions = 237
+	wg.Add(numberOfTransactions)
+	for i := 0; i < numberOfTransactions; i++ {
+		go createUserWithTransaction(&wg, i+1)
+	}
+	wg.Wait()
 }
